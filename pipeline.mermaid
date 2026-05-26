@@ -1,0 +1,65 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, system-ui, -apple-system, sans-serif",
+    "fontSize": "14px",
+    "primaryColor": "#1e293b",
+    "primaryTextColor": "#f8fafc",
+    "primaryBorderColor": "#334155",
+    "lineColor": "#64748b",
+    "secondaryColor": "#0f172a",
+    "tertiaryColor": "#0f172a",
+    "clusterBkg": "#0b1220",
+    "clusterBorder": "#1e293b"
+  },
+  "flowchart": { "curve": "basis", "htmlLabels": true, "padding": 12 }
+}}%%
+flowchart LR
+
+  %% ─────────── PHASE 1 · INFRA (built) ───────────
+  subgraph PHASE1["<b>Phase 1 · Infra  ✅ built</b>"]
+    direction LR
+
+    J["<b>JSON source</b><br/><i>static today,<br/>scraper later</i>"]:::source
+    P["<b>Polars frame</b><br/><i>schema-agnostic<br/>loader</i>"]:::transform
+    PG[("<b>Postgres</b><br/><code>stiftelser</code><br/>17,476 rows")]:::store
+    T{"<b>pick text field</b><br/><i>andamal</i>"}:::decision
+    C["<b>chunk + embed</b><br/><i>e5 multilingual</i>"]:::transform
+    CH[("<b>chunks</b><br/>pgvector + HNSW<br/>cosine")]:::store
+
+    J -->|"ingest"| P
+    P -->|"COPY"| PG
+    PG -->|"select rows"| T
+    T -->|"split → vectors"| C
+    C -->|"upsert"| CH
+  end
+
+  %% ─────────── PHASE 2 · RAG (next) ───────────
+  subgraph PHASE2["<b>Phase 2 · RAG  🚧 next</b>"]
+    direction LR
+
+    Q["<b>user query</b><br/><i>programme profile</i>"]:::source
+    QE["<b>embed query</b><br/><code>'query: ' + text</code>"]:::transform
+    K["<b>ANN top-K</b><br/><i>K = 10 chunks</i>"]:::transform
+    L{"<b>LLM relevance</b><br/><i>tunable threshold<br/>+ rubric</i>"}:::decision
+    TOP3["<b>top 3 foundations</b>"]:::store
+    D["<b>3 application drafts</b><br/><i>per-foundation</i>"]:::output
+
+    Q --> QE
+    QE -->|"cosine search"| K
+    K -->|"candidate set"| L
+    L -->|"keep best 3"| TOP3
+    TOP3 -->|"compose"| D
+  end
+
+  CH -. "vector index" .-> K
+
+  %% ─────────── styling ───────────
+  classDef source     fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#e0f2fe;
+  classDef transform  fill:#1e293b,stroke:#94a3b8,stroke-width:1.5px,color:#f1f5f9;
+  classDef store      fill:#3b2410,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
+  classDef decision   fill:#3f1d2e,stroke:#ec4899,stroke-width:2px,color:#fce7f3;
+  classDef output     fill:#14532d,stroke:#22c55e,stroke-width:2px,color:#dcfce7;
+
+  style PHASE1 fill:#0b1220,stroke:#1e293b,stroke-width:1px,color:#cbd5e1
+  style PHASE2 fill:#0b1220,stroke:#1e293b,stroke-width:1px,color:#cbd5e1

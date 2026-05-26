@@ -1,0 +1,147 @@
+pptxPipelene seems to be:Scrape (once a x weeks)+embed+indexOn init of pipeline:
+Get question
+Find nearest 3 full grants
+Pull rules for themCreate 3 ansökan drafts
+Accompany with suggestions on how to apply - email, online form etc9:08 AMClaude responded: The PPTX is empty (0 bytes — upload may have failed).Analyzed grant application pipeline architecture and identified design gapsAnalyzed grant application pipeline architecture and identified design gapsThe PPTX is empty (0 bytes — upload may have failed). I'll work from your pipeline description directly.
+
+Architecture review: Grant application assistant
+Your instinct is correct. Here's how to tighten each stage.
+
+Stage 1 — Scrape → Embed → Index
+What you have right: The cadence-based refresh pattern is correct for grants. Weekly or bi-weekly is typical.
+What needs to be explicit:
+Grants have two fundamentally different data types that need separate storage:
+Data typeWhat it isStorageStructured metadataDeadline, max amount, eligibility criteria (org type, size, geography), application URL, method (email / web form)Relational table or JSON document storeSemantic contentFull criteria text, purpose, scoring rubricVector store (embedded chunks)
+Don't embed the deadline or the application URL. They belong in metadata, filterable before retrieval. Embedding them just dilutes your vectors.
+Chunking strategy matters here. Grants are section-structured documents (Purpose / Eligibility / Criteria / How to apply). Chunk at section boundaries, not at token count. A grant's eligibility section and its scoring rubric are semantically very different — they should be separate vectors with a grant_id foreign key so you can reassemble the full grant if needed.
+
+Stage 2 — Query → Retrieve → Pull rules
+This is actually a two-stage retrieval, which is the right pattern. Name it clearly:
+Stage 2a:  Semantic search → top-K candidate grant_ids  (vector similarity)
+Stage 2b:  Metadata fetch → full structured record for those grant_ids  (SQL/JSON lookup)
+"Pull rules" = Stage 2b. The "rules" are the structured eligibility constraints + scoring criteria. These are what constrain your generation prompt.
+Critical gap: pre-filtering before vector search. Before hitting the vector store, filter by:
+
+deadline > today — this is the highest-stakes filter. Generating a draft for an expired grant is a hard failure.
+Eligibility match (org type, geography) if you can derive those from the user's question
+
+Without deadline filtering, you will retrieve expired grants. Embeddings don't know about time.
+
+Stage 3 — Generate 3 ansökan drafts
+What you have right: Three drafts is a good pattern — gives the user optionality without overwhelming them.
+Prompt structure to use:
+System:  You are a grant application writer for [org context].
+         Apply ONLY to the criteria listed below. Do not invent requirements.
+         
+Grant:   [full structured record from Stage 2b]
+Criteria: [chunked criteria text from Stage 2a]
+User question: [original query]
+
+Generate an application draft that addresses each scoring criterion explicitly.
+Tag each paragraph with the criterion it addresses.
+The tagging instruction is important — it makes hallucination auditable. If a paragraph can't be tagged to a criterion, it's probably confabulated.
+Differentiate the three drafts on a strategic axis, not randomly:
+
+Draft A: emphasizes impact/outcomes
+Draft B: emphasizes method/execution rigor
+Draft C: emphasizes team/organizational credibility
+
+
+Stage 4 — Application method suggestions
+This is not a RAG problem. It's a structured metadata lookup. The application method (email address, online form URL, portal login, PDF to post) is scraped once and stored as a structured field on the grant record.
+Your output package per grant should be:
+{
+  grant_name: ...,
+  deadline: ...,
+  max_amount: ...,
+  draft: "...",
+  application_method: {
+    type: "online_form" | "email" | "pdf_post",
+    url: "...",
+    contact_email: "...",
+    notes: "requires BankID login" 
+  }
+}
+The "suggestions on how to apply" is just rendering this structured block, not generation.
+
+What's missing from the sketch
+GapRisk if ignoredDeadline pre-filterDraft for expired grant — silent hard failureRe-ranking before generationTop-3 by cosine may not be top-3 by actual fitSource citation in outputUser can't verify; hallucination goes undetectedGrant change detection on re-scrapeCriteria update silently; stale draftsEligibility hard-filterWasted drafts for grants user can't apply to
+
+Summary architecture
+Scraper (weekly)
+  ├── Structured fields  →  Postgres / Snowflake table
+  └── Semantic sections  →  Embed → Pinecone / pgvector / Chroma
+
+Query handler
+  ├── Pre-filter: deadline > today, eligibility match
+  ├── Vector search → top-10 candidates
+  ├── Re-rank → top-3
+  └── Metadata fetch for top-3
+
+Generator
+  ├── 3 drafts (impact / method / credibility framing)
+  └── Per-criterion tagging
+
+Output package
+  ├── Drafts with criterion tags
+  └── Application method block (structured, not generated)
+The RAG part is only the semantic search. Everything else — filtering, eligibility, application instructions — is classical data engineering. That's your advantage here.Retreat_Hackathon_Info.pptxpptx9:14 AMClaude responded: Got it.The user prompt is empty, so there is no primary language to determine. However, based on the thinking block being in English, here is the summary:
+
+Synthesized hackathon context and mapped technical pipeline to client briefThe user prompt is empty, so there is no primary language to determine. However, based on the thinking block being in English, here is the summary:
+
+Synthesized hackathon context and mapped technical pipeline to client briefGot it. Full context now. This is tomorrow — let me reframe everything around what actually matters for a one-day build with a 15-minute demo on Thursday.
+
+Hackathon reframe: Team 03 (Hannah, Drew, Dmitri)
+The brief is sharp: match foundations → explain fit → draft application, using Länsstyrelsen data for Stockholms Stadsmissionen. Real data, real org, no wireframes.
+
+What the data source actually is
+The Länsstyrelsen bulk download (stiftelser.lansstyrelsen.se/Öppendata) is an XML registry of Swedish foundations — each record has:
+
+Foundation name
+Stated purpose (ändamål) — this is your embed target
+Geography
+Contact/application info
+
+Do the bulk download tonight or first thing tomorrow. Don't scrape dynamically during build day — that's a risk you don't need. Download once, parse to a flat table, embed the ändamål field. That's your vector store. Everything else is structured metadata.
+
+Scope for one day: what to build, what to hardcode
+ComponentBuild itHardcode / skipLänsstyrelsen data load + parse✅—Embed ändamål field✅—Stadsmissionen programme profiles✅ (3-4 short texts)—Vector search → top matches✅—Fit explanation✅ (one LLM call)—Application draft✅ (one LLM call)—Weekly re-scrape❌Hardcode as "runs on schedule"Application method routing (email/form)❌One sentence in the UIAuth, user accounts, persistence❌—
+Three programmes from Stadsmissionen to pre-load as your query corpus:
+
+Hemlöshet (homelessness)
+Barn & unga (children & youth)
+Arbetsintegration (work integration)
+
+These are on their website. Write 3-4 sentence descriptions of each. These are your queries.
+
+The actual pipeline for one day
+PREP (tonight or 08:00 car ride):
+  Download Länsstyrelsen bulk XML
+  Parse → DataFrame (name, ändamål, geography, org_nr)
+  Embed ändamål → local Chroma or in-memory FAISS
+  
+BUILD (10:00–16:00):
+  Step 1: Query input = Stadsmissionen programme description
+  Step 2: Vector search → top 5 foundations by ändamål similarity
+  Step 3: LLM call → "Explain why [foundation] fits [programme]. Be honest about gaps."
+  Step 4: LLM call → "Draft a 200-word application opening for [programme] targeting [foundation]."
+  Step 5: UI — Streamlit is fastest, you've done it before
+The fit explanation is your differentiator. "Where the gaps are" is what the brief explicitly asks for and what a non-profit actually needs. Don't skip it.
+
+Demo walk (15 min)
+Suggested flow — walk it slowly, one real example:
+
+(2 min) The problem: Stadsmissionen spends hours manually searching Länsstyrelsen. Show the raw registry to establish pain.
+(3 min) Enter the programme description for "Hemlöshet." Show top 3 foundation matches appear with similarity reasoning.
+(4 min) Click one foundation. Show the fit explanation — including the gap ("this foundation prioritizes acute need, not long-term housing — frame your application accordingly").
+(4 min) Show the draft application opener. Explain it's a starting point, not a final product.
+(2 min) "What's next" slide — deadline filtering, bulk run across all programmes, integration with their existing grant calendar.
+
+The honest gap framing is your pitch moment. Other teams will probably show confident matches. You show a tool that tells Stadsmissionen when not to apply — that's actually more useful.
+
+Division of work suggestion
+PersonTrackDmitriData pipeline: XML parse, embed, vector search. This is your home ground.Hannah / DrewLLM prompt engineering + Streamlit UI
+You can have a working retrieval layer running before lunch and spend the afternoon on generation quality and the demo narrative.
+
+One risk to mitigate now
+The Länsstyrelsen XML can be large and the ändamål field quality varies — many foundations have one-line or vague purpose statements. Run a quick distribution check on text length when you parse it. Foundations with ändamål under ~20 words will be noisy matches. Flag them or filter them out of the demo corpus. You don't want to demo a match where the fit explanation is visibly thin.
