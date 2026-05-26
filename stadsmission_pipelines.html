@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STADSMISSION · Stiftelse-matchning</title>
+<style>
+  /* =========================================================
+     STADSMISSION · Stiftelse matching command console
+     Phase 1 (Ingest) + Phase 2 (Retrieve & Draft)
+     Self-contained, FastHTML-ready.
+     ========================================================= */
+  :root{
+    --bg-0:#0a0a0c; --bg-1:#101015; --bg-2:#15151c; --bg-3:#1c1c25;
+    --line:#262631; --line-2:#1d1d26;
+    --text:#e9e9ee; --text-mute:#8b8b97; --text-dim:#55555f;
+    --orange:#F07E1A; --orange-soft:#ffb070; --orange-glow:rgba(240,126,26,.35);
+    --green:#5dd97a; --red:#ef4444; --amber:#f5b342; --blue:#7aaaff;
+    --grid:rgba(255,255,255,.025);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size:13px;line-height:1.45;-webkit-font-smoothing:antialiased;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:32px 32px;background-position:-1px -1px;min-height:100vh;}
+  .mono{font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;letter-spacing:0}
+  .upper{text-transform:uppercase;letter-spacing:.08em}
+
+  /* TOP BAR */
+  header.topbar{display:flex;align-items:stretch;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0d0d12,#0a0a0c);height:64px;position:sticky;top:0;z-index:50;backdrop-filter:blur(6px)}
+  .brand{display:flex;align-items:center;gap:14px;padding:0 20px;border-right:1px solid var(--line);min-width:330px}
+  .brand-mark{background:var(--orange);padding:8px 10px 6px;line-height:.85;
+    box-shadow:0 0 0 1px rgba(0,0,0,.4),0 8px 24px -8px var(--orange-glow)}
+  .brand-mark div{font-family:'Arial Black','Helvetica Neue',sans-serif;font-weight:900;font-size:13px;color:#000;letter-spacing:-.01em;display:block}
+  .brand-meta{display:flex;flex-direction:column;gap:2px}
+  .brand-title{font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  .brand-sub{font-size:10px;color:var(--text-mute);letter-spacing:.18em;text-transform:uppercase}
+
+  .topbar-status{display:flex;align-items:center;gap:24px;padding:0 24px;flex:1}
+  .stat-pill{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-mute);text-transform:uppercase;letter-spacing:.1em}
+  .stat-pill .v{color:var(--text);font-weight:600;font-family:ui-monospace,monospace;letter-spacing:0}
+  .led{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .demo-tag{margin-left:auto;padding:6px 10px;border:1px solid var(--orange);color:var(--orange);font-size:10px;letter-spacing:.2em;font-weight:700;text-transform:uppercase;background:rgba(240,126,26,.06)}
+
+  nav.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--bg-1);padding:0 20px}
+  .tab{padding:14px 22px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-mute);
+    border-bottom:2px solid transparent;cursor:pointer;display:flex;align-items:center;gap:10px;transition:color .15s,border-color .15s,background .15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--text);border-bottom-color:var(--orange);background:linear-gradient(180deg,transparent,rgba(240,126,26,.04))}
+  .tab .idx{font-size:10px;color:var(--text-dim)}
+  .tab.active .idx{color:var(--orange)}
+  .tab .sub{font-size:9px;color:var(--text-dim);letter-spacing:.14em;margin-left:8px}
+
+  main{padding:18px;display:grid;gap:18px}
+  .panel{display:none}
+  .panel.active{display:grid}
+
+  #ingest-panel.active{grid-template-columns:340px 1fr;grid-template-rows:auto 1fr;gap:18px;
+    grid-template-areas:"controls viz" "controls log"}
+  #ask-panel.active{grid-template-columns:340px 1fr;gap:18px}
+
+  .card{background:var(--bg-1);border:1px solid var(--line);position:relative}
+  .card-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+    border-bottom:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--text-mute);background:linear-gradient(180deg,var(--bg-2),var(--bg-1))}
+  .card-h .right{display:flex;align-items:center;gap:10px;color:var(--text-dim)}
+  .card-b{padding:14px}
+  .corner{position:absolute;width:8px;height:8px;border:1px solid var(--orange);opacity:.45}
+  .corner.tl{top:-1px;left:-1px;border-right:none;border-bottom:none}
+  .corner.tr{top:-1px;right:-1px;border-left:none;border-bottom:none}
+  .corner.bl{bottom:-1px;left:-1px;border-right:none;border-top:none}
+  .corner.br{bottom:-1px;right:-1px;border-left:none;border-top:none}
+
+  .knob{margin-bottom:18px}
+  .knob:last-child{margin-bottom:0}
+  .knob-label{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--text-mute);margin-bottom:8px}
+  .knob-label .v{color:var(--orange);font-family:ui-monospace,monospace;letter-spacing:0;font-weight:600}
+  .knob-help{font-size:10px;color:var(--text-dim);margin-top:5px;font-family:ui-monospace,monospace}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;
+    background:var(--bg-3);border:1px solid var(--line);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;background:var(--orange);
+    border:2px solid #000;cursor:pointer;box-shadow:0 0 8px var(--orange-glow)}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--orange);border:2px solid #000;cursor:pointer}
+
+  select,input[type=text],textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);
+    color:var(--text);padding:8px 10px;font-family:inherit;font-size:12px;outline:none}
+  select:focus,input:focus,textarea:focus{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange-glow)}
+  textarea{resize:vertical;min-height:80px;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.5}
+
+  .toggles{display:flex;flex-direction:column;gap:6px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg-2);
+    border:1px solid var(--line);cursor:pointer;font-size:11px}
+  .toggle .label{color:var(--text-mute);letter-spacing:.06em;text-transform:uppercase;font-size:10px}
+  .toggle input{display:none}
+  .switch{width:28px;height:14px;background:var(--bg-3);border:1px solid var(--line);position:relative;transition:background .15s}
+  .switch::after{content:'';position:absolute;width:8px;height:8px;background:var(--text-dim);top:2px;left:2px;transition:left .15s,background .15s}
+  .toggle input:checked + .switch{background:rgba(240,126,26,.2);border-color:var(--orange)}
+  .toggle input:checked + .switch::after{left:16px;background:var(--orange);box-shadow:0 0 6px var(--orange-glow)}
+
+  .seg{display:flex;border:1px solid var(--line);background:var(--bg-2)}
+  .seg label{flex:1;text-align:center;padding:6px;font-size:10px;cursor:pointer;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--text-mute);border-right:1px solid var(--line)}
+  .seg label:last-child{border-right:none}
+  .seg input{display:none}
+  .seg input:checked + label{background:var(--orange);color:#000;font-weight:700;box-shadow:inset 0 0 0 1px #000}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;background:var(--orange);
+    color:#000;border:none;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
+    cursor:pointer;width:100%;box-shadow:0 0 0 1px #000,0 6px 20px -6px var(--orange-glow);transition:transform .08s,filter .15s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--text-mute);border:1px solid var(--line);box-shadow:none}
+  .btn.ghost:hover{color:var(--text);border-color:var(--orange)}
+  .btn.tiny{padding:6px 10px;font-size:10px;width:auto}
+
+  /* INGEST */
+  #ingest-controls{grid-area:controls}
+  #ingest-viz{grid-area:viz}
+  #ingest-log-card{grid-area:log}
+
+  .pipeline{display:grid;grid-template-columns:auto 24px auto 24px auto 24px auto 24px auto;gap:0;padding:24px 14px;
+    background:radial-gradient(circle at 50% 50%,rgba(240,126,26,.04),transparent 60%),var(--bg-1);
+    border-bottom:1px solid var(--line);align-items:stretch;overflow-x:auto}
+  .pnode{position:relative;text-align:center;padding:14px 10px;border:1px solid var(--line);background:var(--bg-2);
+    min-width:110px;transition:border-color .25s,background .25s,box-shadow .25s}
+  .pnode .pname{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-mute);font-weight:700}
+  .pnode .picon{width:30px;height:30px;margin:8px auto 6px;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:14px;color:var(--text-dim);background:var(--bg-1)}
+  .pnode .pmeta{font-size:10px;color:var(--text-dim);font-family:ui-monospace,monospace;margin-top:4px;min-height:14px;white-space:nowrap}
+  .pnode.store{border-style:solid;background:linear-gradient(180deg,var(--bg-2),rgba(93,217,122,.04))}
+  .pnode.store .picon{border-color:#2a3a2a;color:var(--green)}
+  .pnode.decision{transform:rotate(0)}
+  .pnode.decision .picon{border-radius:3px;transform:rotate(45deg)}
+  .pnode.future{border-style:dashed;opacity:.55}
+  .pnode.active{border-color:var(--orange);background:rgba(240,126,26,.06);box-shadow:0 0 0 1px var(--orange),0 0 24px -6px var(--orange-glow)}
+  .pnode.active .pname{color:var(--orange)}
+  .pnode.active .picon{border-color:var(--orange);color:var(--orange);background:#000}
+  .pnode.done{border-color:#2a3a2a;background:rgba(93,217,122,.04)}
+  .pnode.done .pname{color:var(--green)}
+  .pnode.done .picon{border-color:var(--green);color:var(--green)}
+
+  .pedge{align-self:center;text-align:center;color:var(--text-dim);font-family:ui-monospace,monospace;font-size:14px;position:relative}
+  .pedge::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)}
+  .pedge.flowing::before{background:repeating-linear-gradient(90deg,var(--orange) 0 6px,transparent 6px 12px);animation:flow .6s linear infinite}
+  @keyframes flow{to{background-position:24px 0}}
+
+  .stats{display:grid;grid-template-columns:repeat(5,1fr)}
+  .stat{padding:14px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat .lab{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--text-mute);margin-bottom:6px}
+  .stat .num{font-size:20px;font-weight:700;font-family:ui-monospace,monospace;color:var(--text);letter-spacing:-.01em}
+  .stat .delta{font-size:10px;color:var(--text-dim);margin-top:2px;font-family:ui-monospace,monospace}
+  .stat .delta.up{color:var(--green)}
+
+  #ingest-log{height:240px;overflow-y:auto;padding:10px 14px;font-family:ui-monospace,'JetBrains Mono',monospace;font-size:11px;
+    background:#070709;border-top:1px solid var(--line);color:var(--text-mute)}
+  #ingest-log .line{padding:1px 0;display:flex;gap:10px}
+  #ingest-log .t{color:var(--text-dim);flex:0 0 70px}
+  #ingest-log .lvl{flex:0 0 50px;font-weight:700}
+  #ingest-log .lvl.INFO{color:var(--blue)}
+  #ingest-log .lvl.OK{color:var(--green)}
+  #ingest-log .lvl.WARN{color:var(--amber)}
+  #ingest-log .lvl.SQL{color:#c084fc}
+  #ingest-log .msg{color:var(--text-mute);flex:1}
+  #ingest-log .msg b{color:var(--text)}
+  #ingest-log .msg code{color:var(--orange-soft);background:rgba(240,126,26,.08);padding:0 3px}
+  #ingest-log::-webkit-scrollbar{width:6px}
+  #ingest-log::-webkit-scrollbar-thumb{background:var(--line)}
+
+  /* ASK */
+  .programme-pre{background:var(--bg-0);border:1px solid var(--line);padding:10px;
+    font-family:ui-monospace,monospace;font-size:11px;color:var(--text-mute);line-height:1.5;
+    max-height:140px;overflow:auto;white-space:pre-wrap}
+  .programme-pre .pre-head{color:var(--orange);font-weight:700;display:block;margin-bottom:4px}
+
+  .ask-summary{padding:14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .ask-summary .s-lab{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--text-mute);margin-bottom:4px}
+  .ask-summary .s-v{font-family:ui-monospace,monospace;font-size:14px;color:var(--text);font-weight:600}
+
+  /* foundation card */
+  .fcard{border-bottom:1px solid var(--line);padding:18px;display:grid;grid-template-columns:64px 1fr;gap:18px;
+    transition:background .15s}
+  .fcard:hover{background:rgba(240,126,26,.02)}
+  .fcard:last-child{border-bottom:none}
+  .fcard.spawn{animation:spawn .35s ease-out}
+  @keyframes spawn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  .rank-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .rank-badge{width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+    font-family:'Arial Black',sans-serif;font-size:24px;font-weight:900;background:var(--orange);color:#000;
+    box-shadow:0 0 0 1px #000,0 0 16px -4px var(--orange-glow)}
+  .rank-pos{font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:var(--text-mute)}
+  .score-block{font-family:ui-monospace,monospace;font-size:10px;color:var(--text-dim);text-align:center;line-height:1.5;margin-top:4px}
+  .score-block .v{color:var(--orange);font-weight:700;font-size:11px}
+
+  .fcard h3{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.005em}
+  .f-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .badge{padding:2px 7px;border:1px solid var(--line);color:var(--text-mute);font-family:ui-monospace,monospace;
+    font-size:10px;letter-spacing:0;text-transform:none}
+  .badge.orgnr{color:var(--text-dim)}
+  .badge.lan{border-color:var(--orange);color:var(--orange)}
+  .badge.typ{color:var(--text-mute)}
+
+  .f-section{margin-top:14px}
+  .f-section .sec-h{font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--text-mute);
+    font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .f-section .sec-h::before{content:'';width:4px;height:10px;background:var(--orange)}
+  .f-andamal{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--text-mute);line-height:1.55;
+    background:var(--bg-0);border:1px solid var(--line-2);padding:10px;border-left:2px solid var(--orange)}
+  .f-andamal mark{background:rgba(240,126,26,.18);color:var(--orange-soft);padding:0 2px}
+
+  .fitgap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .fg-box{border:1px solid var(--line);padding:10px;background:var(--bg-2)}
+  .fg-box .hh{font-size:9px;text-transform:uppercase;letter-spacing:.16em;font-weight:700;margin-bottom:6px}
+  .fg-box.aligned .hh{color:var(--green)}
+  .fg-box.gap .hh{color:var(--amber)}
+  .fg-box.reframe .hh{color:var(--blue)}
+  .fg-box ul{margin:0;padding-left:14px;font-size:11.5px;color:var(--text-mute);line-height:1.45}
+  .fg-box ul li{margin-bottom:3px}
+
+  .draft{font-family:'Georgia',serif;font-size:13px;color:var(--text);line-height:1.6;
+    background:var(--bg-0);border:1px solid var(--line-2);padding:14px;border-left:2px solid var(--orange);position:relative}
+  .draft .salu{color:var(--orange);font-weight:700}
+  .draft .ws{color:var(--text-mute);font-style:italic}
+  .draft-meta{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:10px;color:var(--text-dim);font-family:ui-monospace,monospace}
+
+  .apptype{padding:10px 12px;background:rgba(122,170,255,.05);border:1px solid #243345;font-size:12px;color:var(--text-mute)}
+  .apptype b{color:var(--blue)}
+
+  .v2-block{padding:10px 12px;border:1px dashed var(--line);color:var(--text-dim);font-size:10px;
+    font-family:ui-monospace,monospace;background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(255,255,255,.015) 6px 12px);
+    display:flex;align-items:center;gap:8px}
+  .v2-block::before{content:'v2';color:var(--orange);font-weight:700;padding:1px 4px;border:1px solid var(--orange)}
+
+  .empty{padding:48px;text-align:center;color:var(--text-dim);font-size:12px;text-transform:uppercase;letter-spacing:.18em}
+
+  footer.tele{display:flex;border-top:1px solid var(--line);background:var(--bg-1);padding:0;height:28px;font-size:10px;position:sticky;bottom:0}
+  .tele-cell{padding:0 14px;display:flex;align-items:center;gap:8px;border-right:1px solid var(--line);color:var(--text-mute);text-transform:uppercase;letter-spacing:.14em}
+  .tele-cell .v{color:var(--text);font-family:ui-monospace,monospace;letter-spacing:0}
+  .tele-cell:last-child{margin-left:auto;border-right:none;border-left:1px solid var(--line)}
+
+  .muted{color:var(--text-mute)} .dim{color:var(--text-dim)} .accent{color:var(--orange)}
+
+  @media (max-width:1100px){
+    #ingest-panel.active,#ask-panel.active{grid-template-columns:1fr;grid-template-areas:none}
+    .stats{grid-template-columns:repeat(2,1fr)} .ask-summary{grid-template-columns:repeat(2,1fr)}
+    .fitgap{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- =================== TOP BAR =================== -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><div>STOCKHOLMS</div><div>STADSMISSION</div></div>
+    <div class="brand-meta">
+      <div class="brand-title">Stiftelse-matchning</div>
+      <div class="brand-sub">Phase 1 + Phase 2 · prototype</div>
+    </div>
+  </div>
+  <div class="topbar-status">
+    <div class="stat-pill"><span class="led"></span> Postgres <span class="v">sthlm-prod-01</span></div>
+    <div class="stat-pill">stiftelser <span class="v" id="row-count">17 476 rader</span></div>
+    <div class="stat-pill">chunks <span class="v" id="chunk-count">— </span></div>
+    <div class="stat-pill">model <span class="v">multilingual-e5-base · 768d</span></div>
+    <div class="demo-tag">DEMO MODE</div>
+  </div>
+</header>
+
+<!-- =================== TABS =================== -->
+<nav class="tabs" role="tablist">
+  <div class="tab active" data-tab="ingest" role="tab"><span class="idx">01</span> Ingest <span class="sub">JSON → Postgres → pgvector</span></div>
+  <div class="tab" data-tab="ask" role="tab"><span class="idx">02</span> Match &amp; Draft <span class="sub">programme → top 3 stiftelser → utkast</span></div>
+</nav>
+
+<main>
+
+<!-- =================== INGEST PANEL =================== -->
+<section id="ingest-panel" class="panel active">
+
+  <!-- LEFT CONTROLS -->
+  <div id="ingest-controls" class="card">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-h"><span>Phase 1 · Ingest config</span><span class="right mono">POST /ingest/run</span></div>
+    <div class="card-b">
+      <!-- FastHTML mapping: this <form> = pydantic IngestConfig. Replace onsubmit with
+           hx-post="/ingest/run" hx-target="#ingest-viz" hx-swap="outerHTML"
+           hx-ext="sse" sse-connect="/ingest/stream" sse-swap="line" -->
+      <form id="ingest-form" autocomplete="off" onsubmit="return false">
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Källa</span></div>
+          <select name="source_file">
+            <option value="2026-05-26">stiftelser_2026-05-26_1154.json (17 476 rader)</option>
+            <option value="2026-04-12">stiftelser_2026-04-12_0900.json (17 421 rader)</option>
+            <option value="future-scraper">v2 · scraper @ lansstyrelsen.se</option>
+          </select>
+          <div class="knob-help">JSON-dump från Länsstyrelsens öppna data</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Mål-tabell</span></div>
+          <input type="text" name="table" value="stiftelser" readonly style="opacity:.7">
+          <div class="knob-help">drop &amp; recreate · schema-agnostic loader</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Text-fält att embedda</span></div>
+          <select name="text_column">
+            <option value="andamal" selected>andamal (rekommenderat)</option>
+            <option value="namn">namn</option>
+            <option value="firmateckning">firmateckning</option>
+          </select>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Chunk-strategi</span></div>
+          <div class="seg">
+            <input type="radio" name="chunk_strat" id="cs-para" value="paragraph" checked>
+            <label for="cs-para">Paragraf</label>
+            <input type="radio" name="chunk_strat" id="cs-sent" value="sentence">
+            <label for="cs-sent">Mening</label>
+            <input type="radio" name="chunk_strat" id="cs-win" value="window">
+            <label for="cs-win">Fönster</label>
+          </div>
+          <div class="knob-help">paragraf-först, mening som fallback &gt; max_chars</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>max_chars per chunk</span><span class="v" id="v-maxchars">600</span></div>
+          <input type="range" name="max_chars" id="r-maxchars" min="200" max="1200" step="50" value="600">
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Embedding-modell</span></div>
+          <select name="embed_model" id="sel-model">
+            <option value="multilingual-e5-base">intfloat/multilingual-e5-base · 768d</option>
+            <option value="multilingual-e5-large">intfloat/multilingual-e5-large · 1024d</option>
+            <option value="kb-bert-sv">KB/kb-bert-base-swedish-cased · 768d</option>
+          </select>
+          <div class="knob-help">e5 → "passage: " prefix vid ingest, "query: " vid sök</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Batch size</span><span class="v" id="v-batch">64</span></div>
+          <input type="range" name="batch_size" id="r-batch" min="8" max="256" step="8" value="64">
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Steg</span></div>
+          <div class="toggles">
+            <label class="toggle"><span class="label">Normalize embeddings</span>
+              <input type="checkbox" name="normalize" checked><span class="switch"></span></label>
+            <label class="toggle"><span class="label">HNSW index (cosine)</span>
+              <input type="checkbox" name="hnsw" checked><span class="switch"></span></label>
+            <label class="toggle"><span class="label">v2 · table-enricher (län/kommun, scrape, klassificera)</span>
+              <input type="checkbox" name="enrich"><span class="switch"></span></label>
+            <label class="toggle"><span class="label">Verify (kör test-query)</span>
+              <input type="checkbox" name="verify" checked><span class="switch"></span></label>
+          </div>
+        </div>
+
+        <button class="btn" id="btn-run-ingest" type="submit">▶ Kör ingest-pipeline</button>
+        <div style="display:flex;gap:10px;margin-top:8px;align-items:center">
+          <button class="btn ghost tiny" type="button" id="btn-reset-ingest">Reset</button>
+          <span class="dim mono" style="font-size:10px">last run · <span id="last-run">—</span></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- VIZ -->
+  <div id="ingest-viz" class="card">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <div class="card-h">
+      <span>Pipeline-telemetri</span>
+      <span class="right"><span class="mono" id="ingest-state">IDLE</span> · <span class="mono" id="ingest-progress">000%</span></span>
+    </div>
+
+    <!-- Pipeline graph — matches architecture.md Phase 1 -->
+    <div class="pipeline" id="pipeline-graph">
+      <div class="pnode" data-node="json">
+        <div class="pname">JSON-källa</div><div class="picon">{ }</div><div class="pmeta" data-meta="json">static</div>
+      </div>
+      <div class="pedge" data-edge="0">→</div>
+      <div class="pnode" data-node="polars">
+        <div class="pname">Polars frame</div><div class="picon">▤</div><div class="pmeta" data-meta="polars">—</div>
+      </div>
+      <div class="pedge" data-edge="1">→</div>
+      <div class="pnode store" data-node="postgres">
+        <div class="pname">stiftelser</div><div class="picon">▦</div><div class="pmeta" data-meta="postgres">postgres</div>
+      </div>
+      <div class="pedge" data-edge="2">→</div>
+      <div class="pnode" data-node="chunk">
+        <div class="pname">Chunk + embed</div><div class="picon">≋</div><div class="pmeta" data-meta="chunk">e5 · passage:</div>
+      </div>
+      <div class="pedge" data-edge="3">→</div>
+      <div class="pnode store" data-node="chunks">
+        <div class="pname">chunks</div><div class="picon">◈</div><div class="pmeta" data-meta="chunks">pgvector · HNSW</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" id="ingest-stats">
+      <div class="stat"><div class="lab">stiftelser-rader</div>
+        <div class="num" data-stat="rows">0</div>
+        <div class="delta">av <span data-stat-total="rows">17 476</span></div></div>
+      <div class="stat"><div class="lab">andamal-rader</div>
+        <div class="num" data-stat="texts">0</div>
+        <div class="delta">non-null</div></div>
+      <div class="stat"><div class="lab">chunks skapade</div>
+        <div class="num" data-stat="chunks">0</div>
+        <div class="delta">∅ <span data-stat-avg>0</span>/rad</div></div>
+      <div class="stat"><div class="lab">embeddings</div>
+        <div class="num" data-stat="vecs">0</div>
+        <div class="delta">dim <span data-stat-dim>768</span></div></div>
+      <div class="stat"><div class="lab">HNSW index</div>
+        <div class="num" data-stat="hnsw">—</div>
+        <div class="delta">cosine · m=16</div></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="ingest-log-card" class="card">
+    <div class="card-h"><span>Stream-logg</span><span class="right"><span class="led"></span> <span class="mono">tail -f ingest.log</span></span></div>
+    <div id="ingest-log">
+      <div class="line"><span class="t mono">--:--:--</span><span class="lvl INFO">INFO</span><span class="msg">Awaiting trigger... (config redo: <code>POST /ingest/run</code>)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== ASK PANEL =================== -->
+<section id="ask-panel" class="panel">
+
+  <!-- LEFT CONTROLS -->
+  <div id="ask-controls" class="card">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-h"><span>Phase 2 · Match &amp; draft</span><span class="right mono">POST /match/run</span></div>
+    <div class="card-b">
+      <!-- FastHTML mapping: replace onsubmit with hx-post="/match/run" hx-target="#ask-output".
+           Programme select swaps in #programme-text via hx-get="/programmes/{id}". -->
+      <form id="ask-form" autocomplete="off" onsubmit="return false">
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Stadsmissions-verksamhet</span></div>
+          <select name="programme_id" id="sel-prog">
+            <option value="hemloshet">Hemlöshet — härbärgen &amp; lågtröskelboende</option>
+            <option value="barn_unga">Barn och unga — mötesplatser &amp; läxhjälp</option>
+            <option value="arbetsint">Arbetsintegration — språk &amp; praktik</option>
+            <option value="secondhand">Second hand — butiker &amp; arbetsträning</option>
+            <option value="matbutik">Sociala matbutiker — Matmissionen</option>
+            <option value="akut_utsatthet">Stöd vid akut utsatthet — EU-medborgare</option>
+          </select>
+          <div class="knob-help" id="prog-help">verksamhetsprofil = query för cosine-sökning</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Profil-text</span></div>
+          <textarea name="programme_text" id="programme-text" rows="6"></textarea>
+          <div class="knob-help">embeddas som <code>"query: " + text</code> · samma e5-modell</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>top-K chunks (ANN)</span><span class="v" id="v-topk">25</span></div>
+          <input type="range" name="top_k" id="r-topk" min="5" max="60" step="5" value="25">
+          <div class="knob-help">cosine över HNSW · grov chunk-grain</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Aggregering chunks → stiftelse</span></div>
+          <div class="seg">
+            <input type="radio" name="agg" id="agg-mean" value="mean" checked>
+            <label for="agg-mean">Mean</label>
+            <input type="radio" name="agg" id="agg-max" value="max">
+            <label for="agg-max">Max</label>
+            <input type="radio" name="agg" id="agg-sum" value="sum">
+            <label for="agg-sum">Sum</label>
+          </div>
+          <div class="knob-help">grain change: chunk → foundation</div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Top-N efter group-by</span><span class="v" id="v-topn">10</span></div>
+          <input type="range" name="top_n" id="r-topn" min="3" max="30" step="1" value="10">
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>LLM re-rank</span></div>
+          <div class="toggles">
+            <label class="toggle"><span class="label">LLM rerank över hela ANDAMAL</span>
+              <input type="checkbox" name="rerank" id="t-rerank" checked><span class="switch"></span></label>
+            <label class="toggle"><span class="label">Geo-filter · Stockholms län</span>
+              <input type="checkbox" name="geo_sthlm" checked><span class="switch"></span></label>
+            <label class="toggle"><span class="label">TYP = 6 (allmännyttig stiftelse)</span>
+              <input type="checkbox" name="typ6" checked><span class="switch"></span></label>
+            <label class="toggle"><span class="label">Fit &amp; gap-analys (1 LLM-call/stiftelse)</span>
+              <input type="checkbox" name="fitgap" checked><span class="switch"></span></label>
+            <label class="toggle"><span class="label">Generera ansökningsutkast (~200 ord)</span>
+              <input type="checkbox" name="draft" checked><span class="switch"></span></label>
+          </div>
+        </div>
+
+        <div class="knob">
+          <div class="knob-label upper"><span>Slutgiltigt antal förslag</span><span class="v" id="v-final">3</span></div>
+          <input type="range" name="final_k" id="r-final" min="1" max="6" step="1" value="3">
+        </div>
+
+        <button class="btn" type="button" id="btn-match">▶ Matcha &amp; generera utkast</button>
+        <div class="dim mono" style="font-size:10px;margin-top:8px;text-align:center">stateless · idempotent · v1</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIGHT OUTPUT -->
+  <div id="ask-output" class="card">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-h">
+      <span>Pipeline-utfall</span>
+      <span class="right"><span class="mono" id="ask-state">READY</span> · <span class="mono" id="ask-latency">— ms</span></span>
+    </div>
+
+    <div class="ask-summary">
+      <div><div class="s-lab">Programme</div><div class="s-v" id="sum-prog">—</div></div>
+      <div><div class="s-lab">Chunks hämtade</div><div class="s-v mono" id="sum-chunks">—</div></div>
+      <div><div class="s-lab">Kandidater (efter group-by)</div><div class="s-v mono" id="sum-cands">—</div></div>
+      <div><div class="s-lab">Visas (efter rerank)</div><div class="s-v mono" id="sum-final">—</div></div>
+    </div>
+
+    <div id="ask-results">
+      <div class="empty">— välj verksamhet och kör pipelinen för att se top-N stiftelser, fit/gap och utkast —</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- =================== TELEMETRY FOOTER =================== -->
+<footer class="tele">
+  <div class="tele-cell">DB <span class="v">postgres://stadsmission</span></div>
+  <div class="tele-cell">pgvector <span class="v">0.7.4 · HNSW</span></div>
+  <div class="tele-cell">FastHTML <span class="v">v0.6.x</span></div>
+  <div class="tele-cell">LLM <span class="v" id="t-llm">claude-sonnet-4-6</span></div>
+  <div class="tele-cell">Build <span class="v">v0.4.1 · stateless</span></div>
+  <div class="tele-cell">Operator <span class="v">apassov@stadsmissionen.se</span></div>
+</footer>
+
+<script>
+/* =================================================================
+   STADSMISSION · Stiftelse-matchning · interactivity
+   FastHTML translation: every form has name= attrs that map 1:1 to
+   a pydantic model on the backend. Each output region has a stable
+   id (#ingest-viz, #ingest-log, #ask-results) ready to be a hx-target.
+   ================================================================= */
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab+'-panel').classList.add('active');
+  });
+});
+
+/* ---------- Knob value display ---------- */
+const bind=(r,o,fmt=v=>v)=>{const R=document.getElementById(r),O=document.getElementById(o);
+  if(!R||!O) return; const u=()=>O.textContent=fmt(R.value); R.addEventListener('input',u); u();};
+bind('r-maxchars','v-maxchars');
+bind('r-batch','v-batch');
+bind('r-topk','v-topk');
+bind('r-topn','v-topn');
+bind('r-final','v-final');
+
+/* ---------- Model -> dim sync ---------- */
+document.getElementById('sel-model').addEventListener('change',e=>{
+  const m={'multilingual-e5-base':768,'multilingual-e5-large':1024,'kb-bert-sv':768}[e.target.value]||768;
+  document.querySelector('[data-stat-dim]').textContent=m;
+});
+
+/* =================================================================
+   PROGRAMME PROFILES  (Stadsmissionen "queries")
+   These are the demo-hardcoded profiles referenced in architecture.md
+   Phase 2 SC node ("Stadsmissionen programmes · N profiles, demo-hardcoded")
+   ================================================================= */
+const PROGRAMMES={
+  hemloshet:{
+    label:'Hemlöshet',
+    text:`Stockholms Stadsmission driver härbärgen, lågtröskelboenden och dagverksamheter för människor i hemlöshet i Stockholms län. Vi möter vuxna i akut bostadslöshet, långvarig hemlöshet och utsatta EU-medborgare. Insatserna omfattar nattlig övernattning, hygien, måltider, social rådgivning, samt motiverande samtal mot stadigvarande boende. Vi söker bidrag för att utöka antal platser, vinterprotokoll vid kyla under -5°C, samt riktade insatser för kvinnor och hbtqi-personer.`
+  },
+  barn_unga:{
+    label:'Barn och unga',
+    text:`Verksamheten omfattar öppna mötesplatser för barn och unga i socioekonomiskt utsatta områden i Stockholm, läxhjälp, sociala fritidsaktiviteter samt riktat stöd till barn i familjer med försörjningsstöd, missbruk eller psykisk ohälsa. Vi arbetar med vård, fostran och utbildning enligt FN:s barnkonvention. Bidrag söks för lokalkostnader, ledarutbildning och utrustning till sommarkollo.`
+  },
+  arbetsint:{
+    label:'Arbetsintegration',
+    text:`Stadsmissionens arbetsintegration vänder sig till personer långt från arbetsmarknaden — långtidsarbetslösa, nyanlända, personer i missbruksrehabilitering och personer med psykisk ohälsa. Verksamheten består av språkkafé i svenska, arbetspraktik i våra sociala företag, individuell coachning och samverkan med Arbetsförmedlingen. Vi söker medel för handledartjänster och språkmaterial.`
+  },
+  secondhand:{
+    label:'Second hand',
+    text:`Stadsmissionens second hand-butiker säljer skänkta varor och erbjuder arbetsträning för personer som står långt från arbetsmarknaden. Överskottet finansierar våra sociala verksamheter. Behovet är investering i ny butik i Solna samt ombyggnad av sorteringslager — bidrag söks för inventarier, hyllor och transportbil.`
+  },
+  matbutik:{
+    label:'Sociala matbutiker (Matmissionen)',
+    text:`Matmissionen är vår sociala matbutik som säljer livsmedel till kraftigt reducerade priser till låginkomsthushåll i Stockholm. Vi tar emot matsvinn från livsmedelskedjor och minskar både matsvinn och matfattigdom. Bidrag söks för kylkedjeutrustning, transportbil samt utökning till en andra butik i söderort.`
+  },
+  akut_utsatthet:{
+    label:'Stöd vid akut utsatthet',
+    text:`Verksamheten ger krisstöd till människor i akut social nöd: våldsutsatta kvinnor, utsatta EU-medborgare, personer i hemlöshet vid utskrivning från slutenvård. Vi erbjuder kortvarigt boende, mat, hygien, läkar- och tandläkarkontakter, samt rådgivning. Bidrag söks för akut-fond, jourtelefon och utvidgad uppsökande verksamhet under vintern.`
+  },
+};
+const progSel=document.getElementById('sel-prog'), progText=document.getElementById('programme-text');
+function loadProgramme(){
+  const p=PROGRAMMES[progSel.value]; progText.value=p.text;
+  document.getElementById('prog-help').innerHTML=`profil: <span class="accent">${p.label}</span> · embeddas som <code>"query: " + text</code>`;
+}
+progSel.addEventListener('change',loadProgramme); loadProgramme();
+
+/* =================================================================
+   REAL STIFTELSER (extracted from stiftelser_2026-05-26_1154.json)
+   Each entry carries the structured row + ANDAMAL excerpt + a per-
+   programme relevance vector so the demo behaves deterministically.
+   ================================================================= */
+const STIFTELSER=[
+  { id:1003001, namn:'Olle Engkvists Stiftelse', orgnr:'802005-1467', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Att främja vård eller uppfostran av barn, vård av behövande ålderstigna, sjuka eller lytta och vetenskaplig forskning.`,
+    highlight:['vård eller uppfostran av barn','behövande ålderstigna, sjuka eller lytta'],
+    scope:'Stockholms län', size:'stor', notes:'En av de större allmännyttiga stiftelserna · breda anslag inom social omsorg.',
+    rel:{hemloshet:.78,barn_unga:.91,arbetsint:.48,secondhand:.32,matbutik:.39,akut_utsatthet:.82}},
+  { id:1011207, namn:'Stiftelsen Clas Groschinskys Minnesfond', orgnr:'802002-7848', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Att främja vård och uppfostran av barn och lämna understöd för beredande av barns och ungdoms undervisning och utbildning samt att utöva hjälpverksamhet bland behövande ålderstigna, sjuka och lytta.`,
+    highlight:['vård och uppfostran av barn','hjälpverksamhet bland behövande'],
+    scope:'Riksomfattande, ofta Stockholm', size:'medel', notes:'Etablerade utlysningar varje vår.',
+    rel:{hemloshet:.69,barn_unga:.94,arbetsint:.51,secondhand:.28,matbutik:.41,akut_utsatthet:.77}},
+  { id:1004409, namn:'Sven och Dagmar Saléns Stiftelse', orgnr:'802005-7415', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsens ändamål är att främja barns eller ungdoms vård och fostran eller utbildning; vård av behövande ålderstigna, sjuka eller lytta; samt vetenskaplig undervisning eller forskning.`,
+    highlight:['barns eller ungdoms vård och fostran','behövande ålderstigna, sjuka'],
+    scope:'Sverige', size:'medel-stor', notes:'Tre-delat ändamål · social omsorg + forskning.',
+    rel:{hemloshet:.66,barn_unga:.90,arbetsint:.46,secondhand:.30,matbutik:.38,akut_utsatthet:.72}},
+  { id:1002218, namn:'Svenska Stiftelsen för Frälsningsarmén', orgnr:'802005-1051', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsen har till ändamål att för främjandet av Frälsningsarméns verksamhet för barns och ungdoms vård, fostran och utbildning eller för att främja vård av behövande ålderstigna, sjuka eller lytta.`,
+    highlight:['barns och ungdoms vård, fostran','behövande ålderstigna, sjuka'],
+    scope:'Frälsningsarméns regi', size:'stor', notes:'Knuten till Frälsningsarmén — kan begränsa extern utdelning.',
+    rel:{hemloshet:.88,barn_unga:.80,arbetsint:.62,secondhand:.45,matbutik:.58,akut_utsatthet:.89}},
+  { id:1007711, namn:'Anders Sandrews Stiftelse', orgnr:'802005-3315', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Ändamålet skall vara att, utan begränsning till viss familj, vissa familjer eller bestämda personer, dels främja vård och uppfostran av barn, som saknar erforderliga medel, dels lämna understöd i form av exempelvis stipendier.`,
+    highlight:['vård och uppfostran av barn, som saknar erforderliga medel'],
+    scope:'Sverige', size:'stor', notes:'Tydlig socioekonomisk skrivning — "saknar erforderliga medel".',
+    rel:{hemloshet:.70,barn_unga:.93,arbetsint:.49,secondhand:.30,matbutik:.42,akut_utsatthet:.78}},
+  { id:1009023, namn:'Stiftelsen Ragnhild och Einar Lundströms Minne', orgnr:'802005-2655', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsens ändamål är att utdela understöd, anslag, stipendier till främjande av barns och ungdoms vård och fostran eller utbildning, ävensom vård av behövande ålderstigna, sjuka eller lytta.`,
+    highlight:['barns och ungdoms vård och fostran','behövande ålderstigna'],
+    scope:'Stockholm', size:'medel', notes:'Klassisk bredspektra-formulering.',
+    rel:{hemloshet:.71,barn_unga:.88,arbetsint:.55,secondhand:.33,matbutik:.42,akut_utsatthet:.79}},
+  { id:1014502, namn:'Thora och John Nilssons Stiftelse', orgnr:'802004-9818', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Främja vård av behövande ålderstigna, sjuka eller lytta inom S:t Görans församling och dels främja barns och ungdoms vård och fostran eller utbildning, företrädesvis alkohol- och narkotikamissbrukare.`,
+    highlight:['behövande ålderstigna','företrädesvis alkohol- och narkotikamissbrukare'],
+    scope:'S:t Görans församling, Kungsholmen', size:'liten-medel', notes:'⚠ Geo-begränsat (S:t Göran) · explicit missbruksinriktning.',
+    rel:{hemloshet:.86,barn_unga:.75,arbetsint:.80,secondhand:.41,matbutik:.50,akut_utsatthet:.85}},
+  { id:1015820, namn:'Byggnadsstiftelsen S:t Erik', orgnr:'802005-9882', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsen skall med avkastningen av sina tillgångar främja sådan social verksamhet, som avser vård och uppfostran av barn, beredande av undervisning, vård av behövande ålderstigna, sjuka eller lytta, samt arbetshjälp åt behövande.`,
+    highlight:['vård och uppfostran av barn','arbetshjälp åt behövande'],
+    scope:'Stockholms stad', size:'stor', notes:'Inkluderar "arbetshjälp" — bäring mot arbetsintegration.',
+    rel:{hemloshet:.74,barn_unga:.83,arbetsint:.88,secondhand:.58,matbutik:.49,akut_utsatthet:.81}},
+  { id:1018330, namn:'Stiftelsen Maja & J.P Åhlén', orgnr:'802005-7126', ort:'STOCKHOLM',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsen har till ändamål att främja barn eller ungdoms vård och fostran eller utbildning, vård av behövande ålderstigna, sjuka eller lytta, vetenskaplig undervisning eller forskning.`,
+    highlight:['barn eller ungdoms vård','behövande ålderstigna'],
+    scope:'Sverige', size:'medel', notes:'Klassisk skrivning · forskning som tredje ändamål.',
+    rel:{hemloshet:.65,barn_unga:.87,arbetsint:.47,secondhand:.29,matbutik:.39,akut_utsatthet:.72}},
+  { id:1020014, namn:'Madinah insamlingsstiftelse', orgnr:'802480-9920', ort:'KISTA',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsens första ändamål är att bedriva sådan verksamhet som främjar tillvaron i utsatta områden i Sverige, genom att verka för bättring vad gäller såväl den sociala som materiella situationen.`,
+    highlight:['utsatta områden i Sverige','sociala som materiella situationen'],
+    scope:'Utsatta områden, Sverige', size:'liten-medel', notes:'Insamlingsstiftelse · konfessionell profil.',
+    rel:{hemloshet:.79,barn_unga:.74,arbetsint:.71,secondhand:.55,matbutik:.68,akut_utsatthet:.82}},
+  { id:1022115, namn:'Stiftelsen Sufi Service Committee', orgnr:'802482-1107', ort:'TYRESÖ',
+    lankod:1, kommunkod:138, typ:6,
+    andamal:`Att främja tillvaron i utsatta områden i Sverige och inom humanitär hjälp i Afrikas mest utsatta länder, genom att verka för bättring vad gäller såväl den sociala som materiella situationen — vård, fostran och utbildning av barn och ungdom, samt vård av behövande ålderstigna, sjuka och hemlösa.`,
+    highlight:['utsatta områden','hemlösa'],
+    scope:'Sverige + utland', size:'liten', notes:'Bred social skrivning · explicit nämner hemlösa.',
+    rel:{hemloshet:.93,barn_unga:.71,arbetsint:.66,secondhand:.40,matbutik:.61,akut_utsatthet:.92}},
+  { id:1025603, namn:'Läkarmissionen stiftelse för filantropisk verksamhet', orgnr:'802005-9989', ort:'VÄLLINGBY',
+    lankod:1, kommunkod:180, typ:6,
+    andamal:`Stiftelsens huvudändamål är att främja kristen läkarmission, vilket innebär internationell hjälpverksamhet, speciellt för främjande av barns och ungdoms vård, fostran och utbildning, samt hjälp till behövande.`,
+    highlight:['barns och ungdoms vård','behövande'],
+    scope:'Internationellt fokus', size:'stor', notes:'⚠ Främst internationell hjälp · svensk verksamhet sekundär.',
+    rel:{hemloshet:.55,barn_unga:.82,arbetsint:.38,secondhand:.24,matbutik:.43,akut_utsatthet:.65}},
+];
+
+/* Geo / typ decoders (architecture: "decoded at PULL, not at ingest") */
+const LAN={1:'Stockholms län',3:'Uppsala län',4:'Södermanlands län',5:'Östergötlands län'};
+const TYP={6:'Allmännyttig stiftelse',3:'Insamlingsstiftelse','-1':'(okänd)'};
+const KOMMUN={180:'Stockholm',138:'Tyresö',181:'Södertälje',188:'Norrtälje'};
+
+/* =================================================================
+   INGEST RUNNER (faked)
+   FastHTML: replace runIngest() with hx-post="/ingest/run" + SSE
+   stream into #ingest-log and progress events into #ingest-stats.
+   ================================================================= */
+const ingestState={running:false};
+const ingNodes=['json','polars','postgres','chunk','chunks'];
+
+function setNode(name,status,meta){
+  const el=document.querySelector(`[data-node="${name}"]`); if(!el) return;
+  el.classList.remove('active','done');
+  if(status==='active') el.classList.add('active');
+  if(status==='done') el.classList.add('done');
+  if(meta!==undefined){const m=el.querySelector('[data-meta="'+name+'"]'); if(m) m.textContent=meta;}
+}
+function setEdge(i,on){document.querySelectorAll('.pedge')[i]?.classList.toggle('flowing',!!on)}
+function setStat(n,v){const e=document.querySelector(`[data-stat="${n}"]`); if(e) e.textContent=typeof v==='number'?v.toLocaleString('sv-SE'):v;}
+function progress(p){document.getElementById('ingest-progress').textContent=String(Math.round(p*100)).padStart(3,'0')+'%';}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function logLine(level,msg){
+  const log=document.getElementById('ingest-log');
+  const t=new Date(); const ts=`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
+  const row=document.createElement('div'); row.className='line';
+  row.innerHTML=`<span class="t mono">${ts}</span><span class="lvl ${level}">${level}</span><span class="msg">${msg}</span>`;
+  log.appendChild(row); log.scrollTop=log.scrollHeight;
+  while(log.children.length>250) log.removeChild(log.firstChild);
+}
+
+function resetIngest(){
+  ingNodes.forEach(n=>setNode(n,null,''));
+  setNode('json',null,'static');
+  setNode('postgres',null,'postgres');
+  setNode('chunks',null,'pgvector · HNSW');
+  setNode('chunk',null,'e5 · passage:');
+  document.querySelectorAll('.pedge').forEach(e=>e.classList.remove('flowing'));
+  ['rows','texts','chunks','vecs'].forEach(s=>setStat(s,0));
+  setStat('hnsw','—');
+  document.getElementById('ingest-state').textContent='IDLE';
+  document.getElementById('ingest-progress').textContent='000%';
+  document.getElementById('ingest-log').innerHTML='';
+  logLine('INFO','Pipeline reset · awaiting trigger');
+}
+document.getElementById('btn-reset-ingest').addEventListener('click',resetIngest);
+
+async function runIngest(e){
+  if(e) e.preventDefault();
+  if(ingestState.running) return;
+  ingestState.running=true;
+  const form=Object.fromEntries(new FormData(document.getElementById('ingest-form')).entries());
+
+  const totalRows=({'2026-05-26':17476,'2026-04-12':17421,'future-scraper':17500})[form.source_file]||17476;
+  document.querySelector('[data-stat-total="rows"]').textContent=totalRows.toLocaleString('sv-SE');
+  const dim=({'multilingual-e5-base':768,'multilingual-e5-large':1024,'kb-bert-sv':768})[form.embed_model]||768;
+  document.querySelector('[data-stat-dim]').textContent=dim;
+
+  resetIngest();
+  document.getElementById('ingest-state').textContent='RUNNING';
+  logLine('INFO',`<b>POST /ingest/run</b> · source=<code>${form.source_file}</code> · text_column=<code>${form.text_column}</code> · model=<code>${form.embed_model}</code>`);
+
+  // 1 · JSON
+  setNode('json','active','reading'); setEdge(0,true);
+  await sleep(450);
+  logLine('OK',`Read <b>${totalRows.toLocaleString('sv-SE')}</b> STIFTELSE records from JSON`);
+  setNode('json','done',totalRows.toLocaleString('sv-SE')+' rec'); setEdge(0,false);
+  progress(.10);
+
+  // 2 · Polars
+  setNode('polars','active','parsing'); setEdge(1,true);
+  await sleep(550);
+  logLine('INFO','Polars DataFrame · 12 cols (id, namn, orgnr, andamal, ort, lankod, kommunkod, typ, ...)');
+  setNode('polars','done',totalRows.toLocaleString('sv-SE')+'×12'); setEdge(1,false);
+  progress(.22);
+
+  // 3 · Postgres COPY
+  setNode('postgres','active','COPY'); setEdge(2,true);
+  for(let i=1;i<=20;i++){
+    const r=Math.round(totalRows*i/20);
+    setStat('rows',r); setNode('postgres','active',r.toLocaleString('sv-SE')+' rader');
+    if(i===10) logLine('SQL',`DROP TABLE IF EXISTS <code>stiftelser</code>; CREATE TABLE stiftelser (...);`);
+    if(i===14) logLine('SQL',`COPY stiftelser FROM STDIN · ${Math.round(r/2)} rows/s`);
+    await sleep(40);
+  }
+  setNode('postgres','done',totalRows.toLocaleString('sv-SE')+' rader'); setEdge(2,false);
+  progress(.45);
+  logLine('OK',`COPY complete · <b>${totalRows.toLocaleString('sv-SE')}</b> rows into <code>stiftelser</code>`);
+
+  // count non-null andamal
+  const nonNull=Math.round(totalRows*0.987);
+  setStat('texts',nonNull);
+  logLine('INFO',`SELECT id, andamal FROM stiftelser WHERE andamal IS NOT NULL · <b>${nonNull.toLocaleString('sv-SE')}</b> rows`);
+
+  // 4 · Chunk + embed
+  setNode('chunk','active','chunking'); setEdge(3,true);
+  const maxC=parseInt(form.max_chars||600);
+  const totalChunks=Math.round(nonNull*1.42*(600/maxC));
+  let c=0, t0=performance.now();
+  while(c<totalChunks){
+    c=Math.min(c+Math.ceil(totalChunks/35),totalChunks);
+    setStat('chunks',c);
+    document.querySelector('[data-stat-avg]').textContent=(c/nonNull).toFixed(2);
+    setNode('chunk','active',c.toLocaleString('sv-SE')+' chunks');
+    progress(.45 + (c/totalChunks)*0.20);
+    if(c%Math.max(1,Math.floor(totalChunks/4))<Math.ceil(totalChunks/35))
+      logLine('INFO',`chunk_text() paragraph-first split · ${c.toLocaleString('sv-SE')} chunks · avg ${(maxC*0.7).toFixed(0)} chars`);
+    await sleep(28);
+  }
+  logLine('OK',`Chunked: ${nonNull.toLocaleString('sv-SE')} andamal → <b>${c.toLocaleString('sv-SE')}</b> chunks (max_chars=${maxC})`);
+
+  // embed
+  setNode('chunk','active','embedding ('+form.embed_model+')');
+  let v=0;
+  while(v<c){
+    const step=Math.ceil(c/40);
+    v=Math.min(v+step,c);
+    setStat('vecs',v);
+    setNode('chunk','active',v.toLocaleString('sv-SE')+'/'+c.toLocaleString('sv-SE')+' vec');
+    progress(.65 + (v/c)*0.20);
+    if(v%Math.max(1,Math.floor(c/5))<step)
+      logLine('INFO',`<code>"passage: "</code> + chunk → e5 · ${dim}d · ${(Math.random()*60+90).toFixed(0)} vec/s`);
+    await sleep(25);
+  }
+  setEdge(3,false);
+  setNode('chunk','done',v.toLocaleString('sv-SE')+' vec · '+dim+'d');
+
+  // 5 · upsert chunks
+  setNode('chunks','active','upserting');
+  await sleep(400);
+  logLine('SQL',`INSERT INTO <code>chunks</code> (source_id, source_table, source_column, chunk_index, chunk_text, embedding, model_name) VALUES ... ON CONFLICT DO UPDATE`);
+  progress(.90);
+  if(form.hnsw){
+    setNode('chunks','active','build HNSW');
+    await sleep(700);
+    setStat('hnsw','BUILT');
+    logLine('SQL',`CREATE INDEX chunks_emb_hnsw ON chunks USING hnsw (embedding vector_cosine_ops) WITH (m=16, ef_construction=64);`);
+  }
+  setNode('chunks','done',v.toLocaleString('sv-SE')+' vec indexed');
+  progress(.95);
+
+  if(form.verify){
+    await sleep(450);
+    logLine('OK','Verify · sample query "hemlöshet" → top-5 chunks · mean cosine 0.81 ✓');
+  }
+  if(form.enrich){
+    logLine('WARN','v2 · table-enricher kö avseende endast simulation (decode län/kommun, scrape, klassificera)');
+  }
+
+  progress(1);
+  document.getElementById('ingest-state').textContent='COMPLETE';
+  document.getElementById('last-run').textContent=new Date().toLocaleTimeString('sv-SE');
+  document.getElementById('chunk-count').textContent=v.toLocaleString('sv-SE')+' chunks';
+  logLine('OK',`Pipeline complete · ${totalRows.toLocaleString('sv-SE')} rows · ${v.toLocaleString('sv-SE')} chunks · ${dim}d`);
+  ingestState.running=false;
+}
+
+document.getElementById('btn-run-ingest').addEventListener('click',runIngest);
+document.getElementById('ingest-form').addEventListener('submit',runIngest);
+
+/* =================================================================
+   MATCH & DRAFT RUNNER (faked)
+   FastHTML: replace runMatch() with hx-post="/match/run" hx-target="#ask-results".
+   ================================================================= */
+function scoreFor(s,prog,agg,rerank){
+  let base=s.rel[prog]||0.4;
+  if(agg==='max') base=Math.min(.98,base+0.03);
+  if(agg==='sum') base=Math.min(.99,base+0.06);
+  if(rerank)      base=Math.min(.99,base+0.04);
+  base+=(Math.sin(s.id*0.0001)*0.012);
+  return Math.max(0.05,Math.min(0.99,base));
+}
+
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function highlight(text,terms){
+  let h=escapeHtml(text);
+  terms.forEach(t=>{const re=new RegExp('('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'); h=h.replace(re,'<mark>$1</mark>');});
+  return h;
+}
+
+/* Compose a programme-specific application draft & fit/gap per foundation. */
+function composeDraft(prog,f){
+  const p=PROGRAMMES[prog].label;
+  const intros={
+    hemloshet:`Stockholms Stadsmission ansöker härmed om bidrag till vår verksamhet inom hemlöshet i Stockholms län.`,
+    barn_unga:`Stockholms Stadsmission ansöker om medel till våra öppna mötesplatser och stödinsatser för barn och unga i utsatta livssituationer.`,
+    arbetsint:`Stockholms Stadsmission ansöker om bidrag till vår arbetsintegrerande verksamhet för personer långt från arbetsmarknaden.`,
+    secondhand:`Stockholms Stadsmission ansöker om medel till våra second hand-butiker, som finansierar social verksamhet och erbjuder arbetsträning.`,
+    matbutik:`Stockholms Stadsmission ansöker om bidrag till Matmissionen, vår sociala matbutik som motverkar matsvinn och matfattigdom.`,
+    akut_utsatthet:`Stockholms Stadsmission ansöker om medel till vårt akuta stöd för människor i social nöd — utsatta EU-medborgare, våldsutsatta och hemlösa.`,
+  };
+  const closes={
+    hemloshet:`Bidraget skulle möjliggöra utökade härbärgesplatser samt vinterprotokoll under perioder med temperaturer under -5°C.`,
+    barn_unga:`Vi söker medel till lokalkostnader, ledarutbildning och sommarkollo för barn ur familjer med försörjningsstöd.`,
+    arbetsint:`Bidraget används till handledartjänster och språkmaterial i våra sociala arbetsintegrationsföretag.`,
+    secondhand:`Medlen skulle finansiera ombyggnad av sorteringslager och inventarier till ny butik i Solna.`,
+    matbutik:`Bidraget skulle finansiera kylkedjeutrustning och möjliggöra öppnandet av en andra Matmissionen-butik i söderort.`,
+    akut_utsatthet:`Medlen används till akut-fond, jourtelefon och utökad uppsökande verksamhet under vintern.`,
+  };
+  const bridge=`Stiftelsens ändamål — ${f.highlight.map(h=>`"${h}"`).join(' och ')} — har direkt bäring på vår verksamhet inom ${p.toLowerCase()}, som omfattar mer än 4 000 personer årligen i Stockholms län.`;
+  return [
+    `<span class="salu">Till styrelsen för ${f.namn},</span>`,
+    intros[prog],
+    bridge,
+    `Stockholms Stadsmission är en idéburen organisation som sedan 1853 arbetar med social utsatthet i Stockholm. Vår verksamhet drivs i nära samverkan med Stockholms stad, Region Stockholm och privata givare. Senaste verksamhetsåret nådde vi 23 800 unika personer genom våra härbärgen, mötesplatser, matbutiker och arbetsintegration.`,
+    closes[prog],
+    `Vi bifogar gärna ekonomisk redovisning, verksamhetsberättelse och referenser. Med vänlig hälsning,<br/><span class="ws">— [Verksamhetschef · Stockholms Stadsmission]</span>`
+  ].join('<br/><br/>');
+}
+
+function composeFitGap(prog,f){
+  const aligned=[];
+  if(f.highlight.find(h=>/barn|ungdom/i.test(h)) && (prog==='barn_unga'))
+    aligned.push('Explicit nämner barns vård/fostran — exakt matchning mot programmet.');
+  if(f.highlight.find(h=>/hemlös|ålderstigna|behövande/i.test(h)) && (prog==='hemloshet'||prog==='akut_utsatthet'))
+    aligned.push('ANDAMAL inkluderar "behövande"/"hemlösa" — bäring direkt mot målgrupp.');
+  if(/arbetshjälp|missbruk/.test(f.andamal) && (prog==='arbetsint'||prog==='hemloshet'))
+    aligned.push('ANDAMAL nämner arbetshjälp/missbruk — passar arbetsintegration.');
+  if(f.lankod===1) aligned.push('Geo: Stockholms län — överensstämmer med verksamheten.');
+  if(f.typ===6) aligned.push('TYP 6 (allmännyttig) — öppen utdelningsstruktur.');
+  while(aligned.length<3) aligned.push('Brett socialt ändamål · rymmer Stadsmissionens kärnverksamhet.');
+
+  const gaps=[];
+  if(/församling|inom\s+S:t/i.test(f.andamal)) gaps.push('Geo-begränsning till specifik församling — kontrollera om verksamheten täcks.');
+  if(/Frälsningsarmén|kristen|läkarmission/i.test(f.andamal)) gaps.push('Konfessionell/organisatorisk knytning — extern utdelning kan vara begränsad.');
+  if(/internationell|utland|Afrikas/i.test(f.andamal)) gaps.push('Internationellt fokus — svensk verksamhet kan vara sekundär.');
+  if(/forskning|vetenskaplig/i.test(f.andamal)) gaps.push('Forskning som parallellt ändamål — risk för konkurrens om medlen.');
+  if(gaps.length<2) gaps.push('Stor stiftelse → många sökande, konkurrensen om medlen är hög.');
+
+  const reframes={
+    hemloshet:'Rama in ansökan som "vård av behövande ålderstigna" om foundation har äldre-fokus — många härbärgesgäster är 55+.',
+    barn_unga:'Vinkla mot "barns fostran och utbildning" — våra mötesplatser har dokumenterad pedagogisk komponent.',
+    arbetsint:'Lyft "arbetshjälp åt behövande" som direkt citat ur ANDAMAL i ansökans öppningsstycke.',
+    secondhand:'Beskriv second hand som arbetsträning för "behövande", inte som butiksverksamhet.',
+    matbutik:'Positionera Matmissionen som matfattigdomsinsats för "behövande", inte som handel.',
+    akut_utsatthet:'Använd formuleringen "akut social nöd" som matchar äldre stiftelseformuleringar om "nödställda".',
+  };
+  return {aligned:aligned.slice(0,3),gaps:gaps.slice(0,2),reframe:[reframes[prog]]};
+}
+
+function suggestProjectType(prog,f){
+  const map={
+    hemloshet:`Riktat projekt: "Vinterplatser för kvinnor 2026" — 12 mån, ~450 kSEK, mätbart utfall i platser & beläggning.`,
+    barn_unga:`Projektidé: "Läxhjälp + mötesplats i Skärholmen" — 18 mån, ~620 kSEK, samverkan med skolor.`,
+    arbetsint:`Pilot: "Språkpraktik i Matmissionen" — 12 mån, 8 praktikplatser, ~380 kSEK i handledartid.`,
+    secondhand:`Engångsbidrag: "Sorteringslager Solna" — engångsstöd, ~250 kSEK, möbler & hyllor.`,
+    matbutik:`Investeringsbidrag: "Andra Matmissionen-butik söderort" — engångsstöd, ~900 kSEK, lokal & kyl.`,
+    akut_utsatthet:`Verksamhetsstöd: "Akut-fond EU-medborgare vinter 2026/27" — säsongstöd, ~280 kSEK.`,
+  };
+  return map[prog]||'Verksamhetsbidrag enligt foundation-storlek.';
+}
+
+let askTimer=null;
+function spawnDelay(i){return 250+i*180}
+
+async function runMatch(){
+  const form=Object.fromEntries(new FormData(document.getElementById('ask-form')).entries());
+  const prog=form.programme_id; const progLabel=PROGRAMMES[prog].label;
+  const final_k=parseInt(form.final_k||3);
+  const top_k=parseInt(form.top_k||25);
+  const top_n=parseInt(form.top_n||10);
+
+  document.getElementById('ask-state').textContent='EMBED QUERY';
+  document.getElementById('ask-latency').textContent='— ms';
+  document.getElementById('sum-prog').textContent=progLabel;
+  document.getElementById('sum-chunks').textContent='—';
+  document.getElementById('sum-cands').textContent='—';
+  document.getElementById('sum-final').textContent='—';
+  document.getElementById('ask-results').innerHTML='<div class="empty">embedding query · "query: '+escapeHtml(progLabel).toLowerCase()+' ..."</div>';
+
+  const t0=performance.now();
+  await sleep(280);
+
+  document.getElementById('ask-state').textContent='ANN SEARCH';
+  document.getElementById('ask-results').innerHTML='<div class="empty">cosine over HNSW · top-K = '+top_k+' chunks</div>';
+  await sleep(360);
+  document.getElementById('sum-chunks').textContent=top_k;
+
+  document.getElementById('ask-state').textContent='GROUP BY';
+  document.getElementById('ask-results').innerHTML='<div class="empty">group by stiftelse_id · aggregate ('+form.agg+')</div>';
+  await sleep(280);
+
+  // pool + filters
+  let pool=STIFTELSER.slice();
+  if(form.geo_sthlm==='on') pool=pool.filter(s=>s.lankod===1);
+  if(form.typ6==='on') pool=pool.filter(s=>s.typ===6);
+
+  // score & order
+  const scored=pool.map(s=>({...s,_s:scoreFor(s,prog,form.agg,form.rerank==='on')})).sort((a,b)=>b._s-a._s);
+  const candidates=scored.slice(0,Math.min(top_n,scored.length));
+  document.getElementById('sum-cands').textContent=candidates.length;
+
+  if(form.rerank==='on'){
+    document.getElementById('ask-state').textContent='LLM RERANK';
+    document.getElementById('ask-results').innerHTML='<div class="empty">LLM rerank · rubric över hela ANDAMAL · k='+candidates.length+'</div>';
+    await sleep(620);
+  }
+
+  const finalSet=candidates.slice(0,final_k);
+  document.getElementById('sum-final').textContent=final_k;
+
+  document.getElementById('ask-state').textContent=form.fitgap==='on'?'FIT+GAP':'COMPOSING';
+  document.getElementById('ask-results').innerHTML='';
+
+  // render cards staggered
+  finalSet.forEach((f,i)=>{
+    setTimeout(()=>{
+      const card=document.createElement('div'); card.className='fcard spawn';
+      const fg=composeFitGap(prog,f);
+      const draft=form.draft==='on'?composeDraft(prog,f):null;
+      const wordCount=draft?draft.replace(/<[^>]+>/g,'').trim().split(/\s+/).length:0;
+      card.innerHTML=`
+        <div class="rank-col">
+          <div class="rank-badge">${i+1}</div>
+          <div class="rank-pos">RANK</div>
+          <div class="score-block">
+            agg <span class="v">${f._s.toFixed(3)}</span><br/>
+            rerank <span class="v">${(f._s+0.02-i*0.01).toFixed(3)}</span><br/>
+            ${form.rerank==='on'?`<span style="color:var(--text-dim)">← #${candidates.indexOf(f)+1}</span>`:''}
+          </div>
+        </div>
+        <div>
+          <h3>${escapeHtml(f.namn)}</h3>
+          <div class="f-meta">
+            <span class="badge orgnr">org.nr ${f.orgnr}</span>
+            <span class="badge">ID ${f.id}</span>
+            <span class="badge lan">${LAN[f.lankod]||'?'} · ${KOMMUN[f.kommunkod]||f.ort}</span>
+            <span class="badge typ">TYP ${f.typ} · ${TYP[f.typ]||'?'}</span>
+            <span class="badge">storlek: ${f.size}</span>
+          </div>
+
+          <div class="f-section">
+            <div class="sec-h">ANDAMAL · matchade fragment</div>
+            <div class="f-andamal">${highlight(f.andamal,f.highlight)}</div>
+            <div class="dim mono" style="font-size:10px;margin-top:4px">${escapeHtml(f.notes)}</div>
+          </div>
+
+          ${form.fitgap==='on'?`
+          <div class="f-section">
+            <div class="sec-h">Fit · Gap · Reframe (1 LLM-call)</div>
+            <div class="fitgap">
+              <div class="fg-box aligned"><div class="hh">✓ Aligned</div><ul>${fg.aligned.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>
+              <div class="fg-box gap"><div class="hh">⚠ Gap</div><ul>${fg.gaps.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>
+              <div class="fg-box reframe"><div class="hh">↻ Reframe</div><ul>${fg.reframe.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>
+            </div>
+          </div>`:''}
+
+          <div class="f-section">
+            <div class="sec-h">Föreslagen ansökningstyp</div>
+            <div class="apptype"><b>${escapeHtml(progLabel)}</b> → ${escapeHtml(suggestProjectType(prog,f))}</div>
+          </div>
+
+          ${draft?`
+          <div class="f-section">
+            <div class="sec-h">Ansökningsutkast · ~200 ord</div>
+            <div class="draft">${draft}</div>
+            <div class="draft-meta">${wordCount} ord · generated by ${document.getElementById('t-llm').textContent} · stateless</div>
+          </div>`:''}
+
+          <div class="f-section">
+            <div class="v2-block">app-method block · email / form / pdf · contact · deadline · (kommer i v2 från table-enricher)</div>
+          </div>
+        </div>`;
+      document.getElementById('ask-results').appendChild(card);
+    },spawnDelay(i));
+  });
+
+  await sleep(spawnDelay(finalSet.length-1)+200);
+  document.getElementById('ask-state').textContent='READY';
+  document.getElementById('ask-latency').textContent=Math.round(performance.now()-t0)+' ms';
+}
+
+document.getElementById('btn-match').addEventListener('click',runMatch);
+
+/* Reactive re-render on knob change once results exist */
+['change','input'].forEach(ev=>{
+  document.getElementById('ask-form').addEventListener(ev,()=>{
+    const r=document.getElementById('ask-results');
+    if(r.children.length && !r.querySelector('.empty')){
+      clearTimeout(askTimer); askTimer=setTimeout(runMatch,200);
+    }
+  });
+});
+
+/* Init footer / chunk pill */
+(function(){
+  // pretend chunk count from a previous run
+  document.getElementById('chunk-count').textContent='— (kör Phase 1)';
+})();
+</script>
+</body>
+</html>
