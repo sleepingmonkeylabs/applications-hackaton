@@ -1,194 +1,367 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" font-family="Inter, system-ui, -apple-system, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1500" font-family="Inter, system-ui, -apple-system, sans-serif">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#92400e"/>
     </marker>
     <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/>
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a16207"/>
+    </marker>
+    <marker id="arrow-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrow-pink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#db2777"/>
     </marker>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
       <feOffset dx="0" dy="2" result="off"/>
-      <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
+      <feComponentTransfer><feFuncA type="linear" slope="0.25"/></feComponentTransfer>
       <feMerge>
         <feMergeNode/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0a0e1a"/>
-      <stop offset="100%" stop-color="#0f172a"/>
+      <stop offset="0%" stop-color="#faf3e0"/>
+      <stop offset="100%" stop-color="#fdf6e3"/>
     </linearGradient>
   </defs>
 
-  <rect width="1400" height="820" fill="url(#bg)"/>
+  <rect width="1700" height="1500" fill="url(#bg)"/>
 
   <!-- Title -->
-  <text x="700" y="50" text-anchor="middle" fill="#f1f5f9" font-size="28" font-weight="700">Stiftelser RAG Pipeline</text>
-  <text x="700" y="78" text-anchor="middle" fill="#94a3b8" font-size="14">JSON ingest → embedded chunks → query-time retrieval → application drafts</text>
+  <text x="850" y="48" text-anchor="middle" fill="#422006" font-size="28" font-weight="700">Stiftelser RAG Pipeline</text>
+  <text x="850" y="76" text-anchor="middle" fill="#92400e" font-size="14">JSON ingest → embedded chunks → grain-shifting retrieval → fit-aware drafts</text>
 
   <!-- ============ PHASE 1 ============ -->
-  <rect x="30" y="110" width="1340" height="240" rx="14" fill="#0b1220" stroke="#1e293b" stroke-width="1.5"/>
-  <text x="56" y="140" fill="#cbd5e1" font-size="15" font-weight="600">Phase 1 · Infrastructure</text>
-  <text x="245" y="140" fill="#22c55e" font-size="13" font-weight="600">✓ built</text>
+  <rect x="30" y="110" width="1640" height="400" rx="14" fill="#fdf6e3" stroke="#d6b656" stroke-width="1.5"/>
+  <text x="56" y="142" fill="#422006" font-size="16" font-weight="700">Phase 1 · Ingest</text>
+  <text x="216" y="142" fill="#15803d" font-size="13" font-weight="700">✓ built</text>
 
   <!-- n1: JSON source -->
   <g filter="url(#shadow)">
-    <rect x="60" y="180" width="180" height="140" rx="12" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
-    <text x="150" y="220" text-anchor="middle" fill="#e0f2fe" font-size="15" font-weight="700">JSON source</text>
-    <text x="150" y="252" text-anchor="middle" fill="#bae6fd" font-size="12">static today,</text>
-    <text x="150" y="270" text-anchor="middle" fill="#bae6fd" font-size="12">scraper later</text>
+    <rect x="70" y="190" width="180" height="130" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="160" y="230" text-anchor="middle" fill="#3b0764" font-size="15" font-weight="700">JSON source</text>
+    <text x="160" y="262" text-anchor="middle" fill="#5b21b6" font-size="12">static today,</text>
+    <text x="160" y="280" text-anchor="middle" fill="#5b21b6" font-size="12">scraper v2</text>
   </g>
 
   <!-- n2: Polars -->
   <g filter="url(#shadow)">
-    <rect x="280" y="180" width="180" height="140" rx="12" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="370" y="220" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="700">Polars frame</text>
-    <text x="370" y="252" text-anchor="middle" fill="#cbd5e1" font-size="12">schema-agnostic</text>
-    <text x="370" y="270" text-anchor="middle" fill="#cbd5e1" font-size="12">loader</text>
+    <rect x="290" y="190" width="180" height="130" rx="12" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="380" y="230" text-anchor="middle" fill="#7c2d12" font-size="15" font-weight="700">Polars frame</text>
+    <text x="380" y="262" text-anchor="middle" fill="#9a3412" font-size="12">schema-agnostic</text>
+    <text x="380" y="280" text-anchor="middle" fill="#9a3412" font-size="12">loader</text>
   </g>
 
-  <!-- n3: Postgres stiftelser -->
+  <!-- n3: stiftelser -->
   <g filter="url(#shadow)">
-    <rect x="500" y="180" width="180" height="140" rx="12" fill="#3b2410" stroke="#f59e0b" stroke-width="2"/>
-    <text x="590" y="216" text-anchor="middle" fill="#fef3c7" font-size="15" font-weight="700">Postgres</text>
-    <text x="590" y="240" text-anchor="middle" fill="#fde68a" font-size="13" font-style="italic">stiftelser</text>
-    <text x="590" y="266" text-anchor="middle" fill="#fcd34d" font-size="12">17,476 rows</text>
-    <text x="590" y="284" text-anchor="middle" fill="#fcd34d" font-size="11">structured metadata</text>
+    <rect x="510" y="190" width="180" height="130" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="600" y="222" text-anchor="middle" fill="#14532d" font-size="15" font-weight="700">stiftelser</text>
+    <text x="600" y="244" text-anchor="middle" fill="#166534" font-size="12" font-style="italic">postgres</text>
+    <text x="600" y="266" text-anchor="middle" fill="#15803d" font-size="12">17,476 rows</text>
+    <text x="600" y="284" text-anchor="middle" fill="#15803d" font-size="11">structured cols</text>
   </g>
 
   <!-- n4: pick text (diamond) -->
   <g filter="url(#shadow)">
-    <polygon points="720,250 810,180 900,250 810,320" fill="#3f1d2e" stroke="#ec4899" stroke-width="2"/>
-    <text x="810" y="244" text-anchor="middle" fill="#fce7f3" font-size="13" font-weight="700">pick text field</text>
-    <text x="810" y="266" text-anchor="middle" fill="#fbcfe8" font-size="12" font-style="italic">andamal</text>
+    <polygon points="730,255 820,185 910,255 820,325" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+    <text x="820" y="248" text-anchor="middle" fill="#831843" font-size="13" font-weight="700">pick text field</text>
+    <text x="820" y="270" text-anchor="middle" fill="#9d174d" font-size="12" font-style="italic">andamal</text>
   </g>
 
   <!-- n5: chunk + embed -->
   <g filter="url(#shadow)">
-    <rect x="940" y="180" width="180" height="140" rx="12" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="1030" y="220" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="700">chunk + embed</text>
-    <text x="1030" y="252" text-anchor="middle" fill="#cbd5e1" font-size="12">e5 multilingual</text>
-    <text x="1030" y="270" text-anchor="middle" fill="#cbd5e1" font-size="11">"passage: " prefix</text>
+    <rect x="950" y="190" width="180" height="130" rx="12" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="1040" y="226" text-anchor="middle" fill="#7c2d12" font-size="15" font-weight="700">chunk + embed</text>
+    <text x="1040" y="258" text-anchor="middle" fill="#9a3412" font-size="12">e5 multilingual</text>
+    <text x="1040" y="276" text-anchor="middle" fill="#9a3412" font-size="11">"passage: " prefix</text>
   </g>
 
-  <!-- n6: chunks table -->
+  <!-- n6: chunks -->
   <g filter="url(#shadow)">
-    <rect x="1160" y="180" width="180" height="140" rx="12" fill="#3b2410" stroke="#f59e0b" stroke-width="2"/>
-    <text x="1250" y="216" text-anchor="middle" fill="#fef3c7" font-size="15" font-weight="700">chunks</text>
-    <text x="1250" y="244" text-anchor="middle" fill="#fde68a" font-size="12">pgvector</text>
-    <text x="1250" y="262" text-anchor="middle" fill="#fde68a" font-size="12">HNSW · cosine</text>
+    <rect x="1170" y="190" width="180" height="130" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="1260" y="222" text-anchor="middle" fill="#14532d" font-size="15" font-weight="700">chunks</text>
+    <text x="1260" y="244" text-anchor="middle" fill="#166534" font-size="12">pgvector · HNSW</text>
+    <text x="1260" y="262" text-anchor="middle" fill="#166534" font-size="12">cosine</text>
+    <text x="1260" y="284" text-anchor="middle" fill="#15803d" font-size="11" font-weight="600">FK → stiftelser.id</text>
   </g>
 
   <!-- Phase 1 arrows -->
-  <line x1="240" y1="250" x2="275" y2="250" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="257" y="240" text-anchor="middle" fill="#64748b" font-size="11">ingest</text>
+  <line x1="250" y1="255" x2="285" y2="255" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="267" y="246" text-anchor="middle" fill="#a16207" font-size="11">ingest</text>
 
-  <line x1="460" y1="250" x2="495" y2="250" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="478" y="240" text-anchor="middle" fill="#64748b" font-size="11">COPY</text>
+  <line x1="470" y1="255" x2="505" y2="255" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="487" y="246" text-anchor="middle" fill="#a16207" font-size="11">COPY</text>
 
-  <line x1="680" y1="250" x2="717" y2="250" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="699" y="240" text-anchor="middle" fill="#64748b" font-size="11">select</text>
+  <line x1="690" y1="255" x2="727" y2="255" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="708" y="246" text-anchor="middle" fill="#a16207" font-size="11">select</text>
 
-  <line x1="903" y1="250" x2="935" y2="250" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="919" y="240" text-anchor="middle" fill="#64748b" font-size="11">split</text>
+  <line x1="913" y1="255" x2="945" y2="255" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="929" y="246" text-anchor="middle" fill="#a16207" font-size="11">split</text>
 
-  <line x1="1120" y1="250" x2="1155" y2="250" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="1138" y="240" text-anchor="middle" fill="#64748b" font-size="11">upsert</text>
+  <line x1="1130" y1="255" x2="1165" y2="255" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="1147" y="246" text-anchor="middle" fill="#a16207" font-size="11">upsert + FK</text>
+
+  <!-- v2 enricher (future) -->
+  <g>
+    <rect x="430" y="370" width="640" height="120" rx="12" fill="#faf3e0" stroke="#a16207" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="750" y="398" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">v2 · table enricher  (separate mini-pipeline)</text>
+    <text x="750" y="424" text-anchor="middle" fill="#92400e" font-size="12">decode län/kommun  ·  find website (search)  ·  scrape page</text>
+    <text x="750" y="444" text-anchor="middle" fill="#92400e" font-size="12">LLM-classify  →  målgrupp · geo_scope · inferred_app_form · deadline_text</text>
+    <text x="750" y="470" text-anchor="middle" fill="#a16207" font-size="11" font-style="italic">writes back to stiftelser; per-field confidence column</text>
+  </g>
+  <path d="M 600 370 C 600 348, 600 348, 600 320" fill="none" stroke="#a16207" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrow-amber)"/>
+  <text x="608" y="350" fill="#a16207" font-size="11" font-style="italic">enrich rows</text>
 
   <!-- ============ PHASE 2 ============ -->
-  <rect x="30" y="490" width="1340" height="240" rx="14" fill="#0b1220" stroke="#1e293b" stroke-width="1.5"/>
-  <text x="56" y="520" fill="#cbd5e1" font-size="15" font-weight="600">Phase 2 · Retrieval &amp; Drafting</text>
-  <text x="298" y="520" fill="#f59e0b" font-size="13" font-weight="600">⚒ next</text>
+  <rect x="30" y="540" width="1640" height="680" rx="14" fill="#fdf6e3" stroke="#d6b656" stroke-width="1.5"/>
+  <text x="56" y="572" fill="#422006" font-size="16" font-weight="700">Phase 2 · Retrieval &amp; Drafting</text>
+  <text x="362" y="572" fill="#a16207" font-size="13" font-weight="700">⚒ next</text>
 
-  <!-- n1: query -->
+  <!-- ─── Row 1: retrieval ─── -->
+  <text x="56" y="610" fill="#7c2d12" font-size="12" font-weight="600" font-style="italic">retrieval pipeline</text>
+
+  <!-- nP: programmes -->
   <g filter="url(#shadow)">
-    <rect x="60" y="560" width="180" height="140" rx="12" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
-    <text x="150" y="600" text-anchor="middle" fill="#e0f2fe" font-size="15" font-weight="700">user query</text>
-    <text x="150" y="630" text-anchor="middle" fill="#bae6fd" font-size="12">programme</text>
-    <text x="150" y="648" text-anchor="middle" fill="#bae6fd" font-size="12">profile</text>
+    <rect x="70" y="630" width="170" height="140" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="155" y="664" text-anchor="middle" fill="#3b0764" font-size="14" font-weight="700">Stadsmissionen</text>
+    <text x="155" y="682" text-anchor="middle" fill="#3b0764" font-size="14" font-weight="700">programmes</text>
+    <text x="155" y="712" text-anchor="middle" fill="#5b21b6" font-size="12">N profiles,</text>
+    <text x="155" y="728" text-anchor="middle" fill="#5b21b6" font-size="12">demo-hardcoded</text>
+    <text x="155" y="752" text-anchor="middle" fill="#7c3aed" font-size="10" font-style="italic">(v2: postgres table)</text>
   </g>
 
-  <!-- n2: embed query -->
+  <!-- nE: embed query -->
   <g filter="url(#shadow)">
-    <rect x="280" y="560" width="180" height="140" rx="12" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="370" y="600" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="700">embed query</text>
-    <text x="370" y="632" text-anchor="middle" fill="#cbd5e1" font-size="12">"query: " prefix</text>
-    <text x="370" y="650" text-anchor="middle" fill="#cbd5e1" font-size="11">same e5 model</text>
+    <rect x="270" y="630" width="170" height="140" rx="12" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="355" y="678" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">embed query</text>
+    <text x="355" y="708" text-anchor="middle" fill="#9a3412" font-size="12">"query: " prefix</text>
+    <text x="355" y="726" text-anchor="middle" fill="#9a3412" font-size="11">same e5 model</text>
   </g>
 
-  <!-- n3: ANN top-K -->
+  <!-- nA: ANN top-K -->
   <g filter="url(#shadow)">
-    <rect x="500" y="560" width="180" height="140" rx="12" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="590" y="600" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="700">ANN top-K</text>
-    <text x="590" y="632" text-anchor="middle" fill="#cbd5e1" font-size="12">K = 10 chunks</text>
-    <text x="590" y="650" text-anchor="middle" fill="#cbd5e1" font-size="11">cosine over HNSW</text>
+    <rect x="470" y="630" width="170" height="140" rx="12" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="555" y="670" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">ANN top-K</text>
+    <text x="555" y="688" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">chunks</text>
+    <text x="555" y="716" text-anchor="middle" fill="#9a3412" font-size="12">K ≈ 20–30</text>
+    <text x="555" y="734" text-anchor="middle" fill="#9a3412" font-size="11">cosine over HNSW</text>
   </g>
 
-  <!-- n4: LLM relevance (diamond) -->
+  <!-- nG: group by stiftelse_id -->
   <g filter="url(#shadow)">
-    <polygon points="720,630 810,560 900,630 810,700" fill="#3f1d2e" stroke="#ec4899" stroke-width="2"/>
-    <text x="810" y="620" text-anchor="middle" fill="#fce7f3" font-size="13" font-weight="700">LLM relevance</text>
-    <text x="810" y="640" text-anchor="middle" fill="#fbcfe8" font-size="11">tunable threshold</text>
-    <text x="810" y="656" text-anchor="middle" fill="#fbcfe8" font-size="11">+ rubric</text>
+    <rect x="670" y="630" width="200" height="140" rx="12" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="770" y="664" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">group by</text>
+    <text x="770" y="682" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">stiftelse_id</text>
+    <text x="770" y="708" text-anchor="middle" fill="#9a3412" font-size="11">aggregate score</text>
+    <text x="770" y="724" text-anchor="middle" fill="#9a3412" font-size="11">(mean / max cosine)</text>
+    <text x="770" y="746" text-anchor="middle" fill="#b91c1c" font-size="11" font-style="italic" font-weight="700">grain: chunks → foundations</text>
   </g>
 
-  <!-- n5: top 3 -->
+  <!-- nPull: pull full row -->
   <g filter="url(#shadow)">
-    <rect x="940" y="560" width="180" height="140" rx="12" fill="#3b2410" stroke="#f59e0b" stroke-width="2"/>
-    <text x="1030" y="600" text-anchor="middle" fill="#fef3c7" font-size="15" font-weight="700">top 3</text>
-    <text x="1030" y="625" text-anchor="middle" fill="#fde68a" font-size="13">foundations</text>
-    <text x="1030" y="652" text-anchor="middle" fill="#fcd34d" font-size="11">best-fit picks</text>
+    <rect x="900" y="630" width="200" height="140" rx="12" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="1000" y="664" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">pull full row</text>
+    <text x="1000" y="682" text-anchor="middle" fill="#9a3412" font-size="11" font-style="italic">for top-N (N ≈ 10)</text>
+    <text x="1000" y="706" text-anchor="middle" fill="#9a3412" font-size="11">NAMN · full ANDAMAL</text>
+    <text x="1000" y="722" text-anchor="middle" fill="#9a3412" font-size="11">ORT · LÄN-decoded</text>
+    <text x="1000" y="738" text-anchor="middle" fill="#9a3412" font-size="11">TYP-decoded</text>
   </g>
 
-  <!-- n6: 3 application drafts -->
+  <!-- nR: LLM re-rank (diamond) -->
   <g filter="url(#shadow)">
-    <rect x="1160" y="560" width="180" height="140" rx="12" fill="#14532d" stroke="#22c55e" stroke-width="2"/>
-    <text x="1250" y="595" text-anchor="middle" fill="#dcfce7" font-size="15" font-weight="700">3 application</text>
-    <text x="1250" y="615" text-anchor="middle" fill="#dcfce7" font-size="15" font-weight="700">drafts</text>
-    <text x="1250" y="648" text-anchor="middle" fill="#bbf7d0" font-size="11">per-foundation,</text>
-    <text x="1250" y="664" text-anchor="middle" fill="#bbf7d0" font-size="11">ready to review</text>
+    <polygon points="1145,700 1240,615 1335,700 1240,785" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+    <text x="1240" y="688" text-anchor="middle" fill="#831843" font-size="13" font-weight="700">LLM re-rank</text>
+    <text x="1240" y="706" text-anchor="middle" fill="#9d174d" font-size="11">rubric over full</text>
+    <text x="1240" y="722" text-anchor="middle" fill="#9d174d" font-size="11">foundation profiles</text>
+    <text x="1240" y="744" text-anchor="middle" fill="#9d174d" font-size="10" font-style="italic">tunable threshold</text>
   </g>
 
-  <!-- Phase 2 arrows -->
-  <line x1="240" y1="630" x2="275" y2="630" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="257" y="620" text-anchor="middle" fill="#64748b" font-size="11">embed</text>
-
-  <line x1="460" y1="630" x2="495" y2="630" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="478" y="620" text-anchor="middle" fill="#64748b" font-size="11">cosine</text>
-
-  <line x1="680" y1="630" x2="717" y2="630" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="699" y="620" text-anchor="middle" fill="#64748b" font-size="11">candidates</text>
-
-  <line x1="903" y1="630" x2="935" y2="630" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="919" y="620" text-anchor="middle" fill="#64748b" font-size="11">keep best 3</text>
-
-  <line x1="1120" y1="630" x2="1155" y2="630" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="1138" y="620" text-anchor="middle" fill="#64748b" font-size="11">compose</text>
-
-  <!-- Vector index connector: chunks → ANN (dashed amber) -->
-  <path d="M 1250 320 C 1250 430, 590 430, 590 560" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow-amber)"/>
-  <rect x="848" y="410" width="184" height="28" rx="6" fill="#0a0e1a" stroke="#f59e0b" stroke-width="1"/>
-  <text x="940" y="429" text-anchor="middle" fill="#fcd34d" font-size="12" font-style="italic">vector index lookup</text>
-
-  <!-- Legend -->
-  <g transform="translate(30, 760)">
-    <rect x="0" y="0" width="14" height="14" rx="3" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
-    <text x="22" y="11" fill="#cbd5e1" font-size="12">source</text>
-
-    <rect x="90" y="0" width="14" height="14" rx="3" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="112" y="11" fill="#cbd5e1" font-size="12">transform</text>
-
-    <rect x="195" y="0" width="14" height="14" rx="3" fill="#3b2410" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="217" y="11" fill="#cbd5e1" font-size="12">store</text>
-
-    <polygon points="280,7 287,0 294,7 287,14" fill="#3f1d2e" stroke="#ec4899" stroke-width="1.5"/>
-    <text x="302" y="11" fill="#cbd5e1" font-size="12">decision</text>
-
-    <rect x="370" y="0" width="14" height="14" rx="3" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
-    <text x="392" y="11" fill="#cbd5e1" font-size="12">output</text>
-
-    <line x1="460" y1="7" x2="494" y2="7" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 5"/>
-    <text x="502" y="11" fill="#cbd5e1" font-size="12">vector index lookup</text>
+  <!-- nT3: top 3 foundations -->
+  <g filter="url(#shadow)">
+    <rect x="1370" y="630" width="200" height="140" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="1470" y="668" text-anchor="middle" fill="#14532d" font-size="14" font-weight="700">top 3 foundations</text>
+    <text x="1470" y="696" text-anchor="middle" fill="#166534" font-size="12">best-fit picks</text>
+    <text x="1470" y="722" text-anchor="middle" fill="#15803d" font-size="11" font-style="italic">= citation set</text>
+    <text x="1470" y="744" text-anchor="middle" fill="#15803d" font-size="11" font-style="italic">(no extra source-cite step)</text>
   </g>
+
+  <!-- Row 1 arrows -->
+  <line x1="240" y1="700" x2="265" y2="700" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="252" y="690" text-anchor="middle" fill="#a16207" font-size="10">embed</text>
+
+  <line x1="440" y1="700" x2="465" y2="700" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="452" y="690" text-anchor="middle" fill="#a16207" font-size="10">cosine</text>
+
+  <line x1="640" y1="700" x2="665" y2="700" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="652" y="690" text-anchor="middle" fill="#a16207" font-size="10">chunks</text>
+
+  <line x1="870" y1="700" x2="895" y2="700" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="882" y="690" text-anchor="middle" fill="#a16207" font-size="10">top-N</text>
+
+  <line x1="1100" y1="700" x2="1140" y2="700" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="1120" y="690" text-anchor="middle" fill="#a16207" font-size="10">profiles</text>
+
+  <line x1="1335" y1="700" x2="1370" y2="700" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="1352" y="690" text-anchor="middle" fill="#a16207" font-size="10">best 3</text>
+
+  <!-- cross-phase links: chunks → ANN, stiftelser → pull -->
+  <path d="M 1260 320 C 1260 470, 555 470, 555 630" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrow-violet)"/>
+  <rect x="828" y="466" width="194" height="24" rx="6" fill="#faf3e0" stroke="#7c3aed" stroke-width="1"/>
+  <text x="925" y="483" text-anchor="middle" fill="#5b21b6" font-size="11" font-style="italic">vector index lookup</text>
+
+  <path d="M 600 320 C 600 510, 1000 510, 1000 630" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrow-violet)"/>
+  <rect x="730" y="498" width="174" height="24" rx="6" fill="#faf3e0" stroke="#7c3aed" stroke-width="1"/>
+  <text x="817" y="515" text-anchor="middle" fill="#5b21b6" font-size="11" font-style="italic">fetch full row (FK)</text>
+
+  <!-- ─── Row 2: generation ─── -->
+  <text x="56" y="830" fill="#7c2d12" font-size="12" font-weight="600" font-style="italic">generation · runs 3× (once per foundation in top-3)</text>
+
+  <!-- vertical connector from top-3 down to fit+gap -->
+  <path d="M 1470 770 L 1470 800 L 410 800 L 410 870" fill="none" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- nFG: fit + gap (diamond) -->
+  <g filter="url(#shadow)">
+    <polygon points="290,950 410,870 530,950 410,1030" fill="#fce7f3" stroke="#db2777" stroke-width="2.5"/>
+    <text x="410" y="935" text-anchor="middle" fill="#831843" font-size="14" font-weight="700">fit + gap analysis</text>
+    <text x="410" y="958" text-anchor="middle" fill="#9d174d" font-size="11">aligned ·</text>
+    <text x="410" y="975" text-anchor="middle" fill="#9d174d" font-size="11">misaligned ·</text>
+    <text x="410" y="992" text-anchor="middle" fill="#9d174d" font-size="11">reframe options</text>
+    <text x="410" y="1014" text-anchor="middle" fill="#9d174d" font-size="10" font-style="italic">1 LLM call</text>
+  </g>
+
+  <!-- nDR: draft -->
+  <g filter="url(#shadow)">
+    <rect x="630" y="880" width="200" height="140" rx="12" fill="#fef3c7" stroke="#ca8a04" stroke-width="2"/>
+    <text x="730" y="916" text-anchor="middle" fill="#713f12" font-size="15" font-weight="700">application draft</text>
+    <text x="730" y="950" text-anchor="middle" fill="#854d0e" font-size="12">200-word opener,</text>
+    <text x="730" y="968" text-anchor="middle" fill="#854d0e" font-size="12">per foundation</text>
+    <text x="730" y="996" text-anchor="middle" fill="#a16207" font-size="11" font-style="italic">2nd LLM call</text>
+  </g>
+
+  <!-- nAT: app-type suggestion -->
+  <g filter="url(#shadow)">
+    <rect x="870" y="880" width="200" height="140" rx="12" fill="#fef3c7" stroke="#ca8a04" stroke-width="2"/>
+    <text x="970" y="912" text-anchor="middle" fill="#713f12" font-size="14" font-weight="700">application-type</text>
+    <text x="970" y="930" text-anchor="middle" fill="#713f12" font-size="14" font-weight="700">suggestion</text>
+    <text x="970" y="960" text-anchor="middle" fill="#854d0e" font-size="12">project pitch idea</text>
+    <text x="970" y="980" text-anchor="middle" fill="#854d0e" font-size="11">("what to apply for")</text>
+    <text x="970" y="1004" text-anchor="middle" fill="#a16207" font-size="11" font-style="italic">part of draft prompt</text>
+  </g>
+
+  <!-- nAM: v2 app-method (future) -->
+  <g>
+    <rect x="1110" y="880" width="200" height="140" rx="12" fill="#faf3e0" stroke="#a16207" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="1210" y="916" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">v2 · app-method</text>
+    <text x="1210" y="934" text-anchor="middle" fill="#7c2d12" font-size="14" font-weight="700">block</text>
+    <text x="1210" y="960" text-anchor="middle" fill="#92400e" font-size="11">email / form / pdf</text>
+    <text x="1210" y="976" text-anchor="middle" fill="#92400e" font-size="11">contact, notes</text>
+    <text x="1210" y="1000" text-anchor="middle" fill="#a16207" font-size="11" font-style="italic">needs enricher (v2)</text>
+  </g>
+
+  <!-- nOUT: output card -->
+  <g filter="url(#shadow)">
+    <rect x="1350" y="850" width="240" height="200" rx="14" fill="#fef3c7" stroke="#ca8a04" stroke-width="2.5"/>
+    <text x="1470" y="884" text-anchor="middle" fill="#713f12" font-size="15" font-weight="700">output card</text>
+    <text x="1470" y="902" text-anchor="middle" fill="#854d0e" font-size="11" font-style="italic">per foundation</text>
+    <line x1="1370" y1="912" x2="1570" y2="912" stroke="#ca8a04" stroke-width="1" opacity="0.5"/>
+    <text x="1370" y="932" fill="#713f12" font-size="12">•</text>
+    <text x="1384" y="932" fill="#713f12" font-size="12">draft (200 w)</text>
+    <text x="1370" y="954" fill="#713f12" font-size="12">•</text>
+    <text x="1384" y="954" fill="#713f12" font-size="12">fit + gaps</text>
+    <text x="1370" y="976" fill="#713f12" font-size="12">•</text>
+    <text x="1384" y="976" fill="#713f12" font-size="12">type suggestion</text>
+    <text x="1370" y="998" fill="#a16207" font-size="12">•</text>
+    <text x="1384" y="998" fill="#a16207" font-size="12" font-style="italic">method (v2)</text>
+    <text x="1370" y="1020" fill="#713f12" font-size="12">•</text>
+    <text x="1384" y="1020" fill="#713f12" font-size="12">foundation NAMN</text>
+    <text x="1370" y="1038" fill="#854d0e" font-size="11" font-style="italic">  + ORT, LÄN</text>
+  </g>
+
+  <!-- Row 2 arrows: FG → DR, AT; DR→OUT, AT→OUT, AM→OUT -->
+  <line x1="530" y1="950" x2="625" y2="950" stroke="#db2777" stroke-width="2" marker-end="url(#arrow-pink)"/>
+  <text x="578" y="940" text-anchor="middle" fill="#9d174d" font-size="11">compose</text>
+
+  <!-- FG → AT (curve below the draft box) -->
+  <path d="M 460 1015 C 460 1080, 970 1080, 970 1020" fill="none" stroke="#db2777" stroke-width="2" marker-end="url(#arrow-pink)"/>
+  <text x="690" y="1075" text-anchor="middle" fill="#9d174d" font-size="11">suggest type</text>
+
+  <!-- drafts → OUT (curve above the stack, lands top-left) -->
+  <path d="M 730 880 C 730 826, 1410 826, 1410 850" fill="none" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- suggestion → OUT (curve above the stack, lands top-right) -->
+  <path d="M 970 880 C 970 846, 1520 846, 1520 850" fill="none" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- app-method → OUT (short curve to side) -->
+  <path d="M 1310 950 C 1330 950, 1340 950, 1350 950" fill="none" stroke="#a16207" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrow-amber)"/>
+
+  <!-- Caveat / footnote -->
+  <g>
+    <rect x="56" y="1080" width="1240" height="56" rx="10" fill="#faf3e0" stroke="#a16207" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="76" y="1104" fill="#7c2d12" font-size="13" font-weight="700">v1 scope:</text>
+    <text x="160" y="1104" fill="#7c2d12" font-size="13">stateless &amp; idempotent — no run-to-run state, no change detection on re-scrape.</text>
+    <text x="76" y="1124" fill="#92400e" font-size="12" font-style="italic">Future: enricher pipeline populates målgrupp/geo/app-form/deadline; method routing then becomes possible.</text>
+  </g>
+
+  <!-- Hackathon note -->
+  <g>
+    <rect x="56" y="1160" width="1500" height="42" rx="10" fill="#fef3c7" stroke="#ca8a04" stroke-width="1"/>
+    <text x="76" y="1186" fill="#713f12" font-size="13"><tspan font-weight="700">Demo narrative · </tspan>Stadsmissionen programme (e.g. Hemlöshet) → 3 best-fit stiftelser → for each: honest fit + gaps + tailored draft. "When NOT to apply" is the pitch.</text>
+  </g>
+
+  <!-- ============ LEGEND ============ -->
+  <g transform="translate(56, 1240)">
+    <rect x="0" y="-26" width="1500" height="200" rx="10" fill="#fdf6e3" stroke="#d6b656" stroke-width="1"/>
+    <text x="14" y="-6" fill="#422006" font-size="13" font-weight="700">Legend</text>
+
+    <!-- source -->
+    <rect x="14" y="14" width="18" height="18" rx="3" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="40" y="28" fill="#422006" font-size="12">source · violet</text>
+    <text x="40" y="44" fill="#7c2d12" font-size="10" font-style="italic">JSON, Stadsmissionen progs</text>
+
+    <!-- transform -->
+    <rect x="220" y="14" width="18" height="18" rx="3" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="246" y="28" fill="#422006" font-size="12">transform · orange</text>
+    <text x="246" y="44" fill="#7c2d12" font-size="10" font-style="italic">embed, group, pull, etc.</text>
+
+    <!-- store -->
+    <rect x="440" y="14" width="18" height="18" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="466" y="28" fill="#422006" font-size="12">store · green</text>
+    <text x="466" y="44" fill="#7c2d12" font-size="10" font-style="italic">stiftelser, chunks, top-3</text>
+
+    <!-- decision -->
+    <polygon points="650,14 668,4 686,14 668,32" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+    <text x="692" y="22" fill="#422006" font-size="12">LLM decision · pink</text>
+    <text x="692" y="42" fill="#7c2d12" font-size="10" font-style="italic">re-rank, fit + gap</text>
+
+    <!-- output -->
+    <rect x="870" y="14" width="18" height="18" rx="3" fill="#fef3c7" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="896" y="28" fill="#422006" font-size="12">output · yellow</text>
+    <text x="896" y="44" fill="#7c2d12" font-size="10" font-style="italic">draft, suggestion, card</text>
+
+    <!-- future -->
+    <rect x="1080" y="14" width="18" height="18" rx="3" fill="#faf3e0" stroke="#a16207" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="1106" y="28" fill="#422006" font-size="12">future / v2 · dashed</text>
+    <text x="1106" y="44" fill="#7c2d12" font-size="10" font-style="italic">enricher, method block</text>
+
+    <!-- Edges section -->
+    <text x="14" y="86" fill="#422006" font-size="13" font-weight="700">Edges</text>
+
+    <line x1="14" y1="106" x2="64" y2="106" stroke="#92400e" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="74" y="110" fill="#422006" font-size="12">data flow (within phase)</text>
+
+    <line x1="290" y1="106" x2="340" y2="106" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow-violet)"/>
+    <text x="350" y="110" fill="#422006" font-size="12">cross-phase lookup (FK / vector index)</text>
+
+    <line x1="650" y1="106" x2="700" y2="106" stroke="#db2777" stroke-width="2" marker-end="url(#arrow-pink)"/>
+    <text x="710" y="110" fill="#422006" font-size="12">LLM-driven branch</text>
+
+    <line x1="900" y1="106" x2="950" y2="106" stroke="#a16207" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow-amber)"/>
+    <text x="960" y="110" fill="#422006" font-size="12">future / not in v1</text>
+
+    <!-- Grain change call-out -->
+    <text x="14" y="146" fill="#b91c1c" font-size="12" font-weight="700">★ Key insight:</text>
+    <text x="118" y="146" fill="#7c2d12" font-size="12">the "group by stiftelse_id" node changes <tspan font-style="italic">grain</tspan> from chunks → foundations.</text>
+    <text x="14" y="164" fill="#7c2d12" font-size="12">K chunks may collapse to fewer than K foundations; LLM re-rank then judges full profiles, not fragments.</text>
+  </g>
+
 </svg>

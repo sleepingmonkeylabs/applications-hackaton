@@ -1,65 +1,91 @@
+```mermaid
 %%{init: {
   "theme": "base",
   "themeVariables": {
     "fontFamily": "Inter, system-ui, -apple-system, sans-serif",
     "fontSize": "14px",
-    "primaryColor": "#1e293b",
-    "primaryTextColor": "#f8fafc",
-    "primaryBorderColor": "#334155",
-    "lineColor": "#64748b",
-    "secondaryColor": "#0f172a",
-    "tertiaryColor": "#0f172a",
-    "clusterBkg": "#0b1220",
-    "clusterBorder": "#1e293b"
+    "primaryColor": "#fef3c7",
+    "primaryTextColor": "#422006",
+    "primaryBorderColor": "#ca8a04",
+    "lineColor": "#92400e",
+    "secondaryColor": "#fed7aa",
+    "tertiaryColor": "#faf3e0",
+    "clusterBkg": "#fdf6e3",
+    "clusterBorder": "#d6b656",
+    "background": "#faf3e0"
   },
-  "flowchart": { "curve": "basis", "htmlLabels": true, "padding": 12 }
+  "flowchart": { "curve": "basis", "htmlLabels": true, "padding": 14 }
 }}%%
 flowchart LR
 
-  %% ─────────── PHASE 1 · INFRA (built) ───────────
-  subgraph PHASE1["<b>Phase 1 · Infra  ✅ built</b>"]
+  %% ─────────── PHASE 1 · INGEST (built) ───────────
+  subgraph PHASE1["<b>Phase 1 · Ingest  ✓ built</b>"]
     direction LR
 
-    J["<b>JSON source</b><br/><i>static today,<br/>scraper later</i>"]:::source
+    J["<b>JSON source</b><br/><i>static today,<br/>scraper v2</i>"]:::source
     P["<b>Polars frame</b><br/><i>schema-agnostic<br/>loader</i>"]:::transform
-    PG[("<b>Postgres</b><br/><code>stiftelser</code><br/>17,476 rows")]:::store
+    PG[("<b>stiftelser</b><br/><code>postgres</code><br/>17,476 rows<br/>structured cols")]:::store
     T{"<b>pick text field</b><br/><i>andamal</i>"}:::decision
-    C["<b>chunk + embed</b><br/><i>e5 multilingual</i>"]:::transform
-    CH[("<b>chunks</b><br/>pgvector + HNSW<br/>cosine")]:::store
+    C["<b>chunk + embed</b><br/><i>e5 multilingual<br/>'passage: ' prefix</i>"]:::transform
+    CH[("<b>chunks</b><br/>pgvector + HNSW · cosine<br/><b>FK → stiftelser.id</b>")]:::store
 
     J -->|"ingest"| P
     P -->|"COPY"| PG
-    PG -->|"select rows"| T
-    T -->|"split → vectors"| C
-    C -->|"upsert"| CH
+    PG -->|"select andamal"| T
+    T -->|"split"| C
+    C -->|"upsert + FK"| CH
+
+    EN["<b>v2 · table enricher</b><br/><i>decode län/kommun,<br/>find website, scrape,<br/>LLM-classify málgrupp /<br/>geo-scope / app-form /<br/>deadline_text</i>"]:::future
+    EN -. "future: enrich rows" .-> PG
   end
 
-  %% ─────────── PHASE 2 · RAG (next) ───────────
-  subgraph PHASE2["<b>Phase 2 · RAG  🚧 next</b>"]
+  %% ─────────── PHASE 2 · RETRIEVAL & DRAFTING ───────────
+  subgraph PHASE2["<b>Phase 2 · Retrieval & Drafting  ⚒ next</b>"]
     direction LR
 
-    Q["<b>user query</b><br/><i>programme profile</i>"]:::source
-    QE["<b>embed query</b><br/><code>'query: ' + text</code>"]:::transform
-    K["<b>ANN top-K</b><br/><i>K = 10 chunks</i>"]:::transform
-    L{"<b>LLM relevance</b><br/><i>tunable threshold<br/>+ rubric</i>"}:::decision
-    TOP3["<b>top 3 foundations</b>"]:::store
-    D["<b>3 application drafts</b><br/><i>per-foundation</i>"]:::output
+    SC[("<b>Stadsmissionen<br/>programmes</b><br/><i>N profiles,<br/>demo-hardcoded</i><br/><i>v2: postgres table</i>")]:::source
+    QE["<b>embed query</b><br/><code>'query: ' + text</code><br/><i>same e5 model</i>"]:::transform
+    K["<b>ANN top-K chunks</b><br/><i>K ≈ 20-30<br/>cosine over HNSW</i>"]:::transform
+    G["<b>group by stiftelse_id</b><br/><i>aggregate score<br/>(mean / max cosine)<br/><b>grain: chunks → foundations</b></i>"]:::transform
+    PULL["<b>pull full row</b><br/><i>NAMN · full ANDAMAL ·<br/>ORT · LÄN · TYP-decoded</i>"]:::transform
+    L{"<b>LLM re-rank</b><br/><i>rubric over full<br/>foundation profiles</i>"}:::decision
+    TOP3[("<b>top 3 foundations</b><br/><i>= citation set</i>")]:::store
 
-    Q --> QE
+    FG{"<b>fit + gap analysis</b><br/><i>aligned · misaligned ·<br/>reframe options</i><br/><b>1 LLM call, per foundation</b>"}:::decision
+    DR["<b>application draft</b><br/><i>200-word opener,<br/>per foundation</i>"]:::output
+    AT["<b>application-type<br/>suggestion</b><br/><i>project pitch idea</i>"]:::output
+    AM["<b>v2 · app-method block</b><br/><i>email / form / pdf,<br/>contact, notes</i>"]:::future
+    OUT["<b>output card</b><br/><i>per foundation:</i><br/>• draft<br/>• fit + gaps<br/>• type suggestion<br/>• <i>method (v2)</i>"]:::output
+
+    SC --> QE
     QE -->|"cosine search"| K
-    K -->|"candidate set"| L
+    K -->|"raw chunk hits"| G
+    G -->|"top-N foundations<br/>N ≈ 10"| PULL
+    PULL -->|"profile bundles"| L
     L -->|"keep best 3"| TOP3
-    TOP3 -->|"compose"| D
+    TOP3 -->|"× per foundation"| FG
+    FG -->|"compose"| DR
+    FG -->|"suggest"| AT
+    DR --> OUT
+    AT --> OUT
+    AM -. "future" .-> OUT
   end
 
-  CH -. "vector index" .-> K
+  %% cross-phase links
+  CH -. "vector index lookup" .-> K
+  PG -. "fetch full row" .-> PULL
+
+  NOTE["<i>v1: stateless &amp; idempotent — no run-to-run state, no change detection yet</i>"]:::note
 
   %% ─────────── styling ───────────
-  classDef source     fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#e0f2fe;
-  classDef transform  fill:#1e293b,stroke:#94a3b8,stroke-width:1.5px,color:#f1f5f9;
-  classDef store      fill:#3b2410,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
-  classDef decision   fill:#3f1d2e,stroke:#ec4899,stroke-width:2px,color:#fce7f3;
-  classDef output     fill:#14532d,stroke:#22c55e,stroke-width:2px,color:#dcfce7;
+  classDef source     fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#3b0764;
+  classDef transform  fill:#fed7aa,stroke:#ea580c,stroke-width:1.5px,color:#7c2d12;
+  classDef store      fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d;
+  classDef decision   fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843;
+  classDef output     fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#713f12;
+  classDef future     fill:#faf3e0,stroke:#a16207,stroke-width:1.5px,stroke-dasharray:5 4,color:#7c2d12;
+  classDef note       fill:#faf3e0,stroke:#a16207,stroke-width:1px,color:#713f12;
 
-  style PHASE1 fill:#0b1220,stroke:#1e293b,stroke-width:1px,color:#cbd5e1
-  style PHASE2 fill:#0b1220,stroke:#1e293b,stroke-width:1px,color:#cbd5e1
+  style PHASE1 fill:#fdf6e3,stroke:#d6b656,stroke-width:1px,color:#713f12
+  style PHASE2 fill:#fdf6e3,stroke:#d6b656,stroke-width:1px,color:#713f12
+```
