@@ -1,3 +1,6 @@
+# Architecture
+
+```mermaid
 %%{init: {
   "theme": "base",
   "themeVariables": {
@@ -87,3 +90,73 @@ flowchart LR
 
   style PHASE1 fill:#fdf6e3,stroke:#d6b656,stroke-width:1px,color:#713f12
   style PHASE2 fill:#fdf6e3,stroke:#d6b656,stroke-width:1px,color:#713f12
+```
+
+---
+
+## Fallback (if the above still won't render)
+
+Some older bundled Mermaid versions choke on HTML tags inside quoted labels even with `htmlLabels: true`. If the block above shows a parse error, swap it for this plain-text variant — same structure, `<br/>` replaced with `\n`, no `<b>`/`<i>`/`<code>` tags:
+
+```mermaid
+%%{init: { "theme": "base", "flowchart": { "curve": "linear" } }}%%
+flowchart LR
+
+  subgraph PHASE1["Phase 1 · Ingest  ✓ built"]
+    direction LR
+    J["JSON source\nstatic today, scraper v2"]:::source
+    P["Polars frame\nschema-agnostic loader"]:::transform
+    PG[("stiftelser\npostgres · 17,476 rows")]:::store
+    T{"pick text field\nandamal"}:::decision
+    C["chunk + embed\ne5 multilingual · 'passage:' prefix"]:::transform
+    CH[("chunks\npgvector + HNSW · cosine\nFK → stiftelser.id")]:::store
+
+    J -->|ingest| P
+    P -->|COPY| PG
+    PG -->|select andamal| T
+    T -->|split| C
+    C -->|upsert + FK| CH
+
+    EN["v2 · table enricher\ndecode län/kommun, scrape,\nLLM-classify"]:::future
+    EN -. "future: enrich rows" .-> PG
+  end
+
+  subgraph PHASE2["Phase 2 · Retrieval & Drafting  ⚒ next"]
+    direction LR
+    SC[("Stadsmissionen programmes\nN profiles, demo-hardcoded")]:::source
+    QE["embed query\n'query:' + text · same e5 model"]:::transform
+    K["ANN top-K chunks\nK ≈ 20-30 · cosine over HNSW"]:::transform
+    G["group by stiftelse_id\naggregate (mean/max cosine)"]:::transform
+    PULL["pull full row\nNAMN · ANDAMAL · ORT · LÄN · TYP"]:::transform
+    L{"LLM re-rank\nrubric over full profiles"}:::decision
+    TOP3[("top 3 foundations\n= citation set")]:::store
+    FG{"fit + gap analysis\naligned · misaligned · reframe\n1 LLM call per foundation"}:::decision
+    DR["application draft\n200-word opener per foundation"]:::output
+    AT["application-type suggestion\nproject pitch idea"]:::output
+    AM["v2 · app-method block\nemail / form / pdf, contact"]:::future
+    OUT["output card per foundation:\n• draft\n• fit + gaps\n• type suggestion\n• method (v2)"]:::output
+
+    SC --> QE
+    QE -->|cosine search| K
+    K -->|raw chunk hits| G
+    G -->|top-N foundations N ≈ 10| PULL
+    PULL -->|profile bundles| L
+    L -->|keep best 3| TOP3
+    TOP3 -->|× per foundation| FG
+    FG -->|compose| DR
+    FG -->|suggest| AT
+    DR --> OUT
+    AT --> OUT
+    AM -. future .-> OUT
+  end
+
+  CH -. "vector index lookup" .-> K
+  PG -. "fetch full row" .-> PULL
+
+  classDef source     fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#3b0764;
+  classDef transform  fill:#fed7aa,stroke:#ea580c,stroke-width:1.5px,color:#7c2d12;
+  classDef store      fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d;
+  classDef decision   fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843;
+  classDef output     fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#713f12;
+  classDef future     fill:#faf3e0,stroke:#a16207,stroke-width:1.5px,stroke-dasharray:5 4,color:#7c2d12;
+```
